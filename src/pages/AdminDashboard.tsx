@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
 import { auth, db } from "../lib/firebase";
@@ -11,6 +12,7 @@ import {
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
@@ -19,9 +21,11 @@ import { Link, useNavigate } from "react-router-dom";
 type GroupDoc = {
   group_id: number;
   group_name: string;
-  creator: string; // email 推奨
-  player_password: string; // 6桁
-  admin_password: string; // 8桁
+  creator: string;
+  player_password: string;
+  admin_password: string;
+  created_at?: any;
+  last_updated?: any;
 };
 
 type AdminMembership = {
@@ -50,6 +54,8 @@ const gen6 = () =>
 // 6桁0埋め（入力の正規化用）
 const pad6 = (n: number | string) =>
   String(n).replace(/\D/g, "").padStart(6, "0");
+
+const formatTs = (t?: any) => t?.toDate?.().toLocaleString?.() || "-";
 
 // ===== モーダル共通（超簡易） =====
 function Modal({
@@ -130,10 +136,10 @@ export default function AdminDashboard() {
       setMemberships(items);
 
       // それぞれの Groups を取得
-      const groupMap: Record<string, GroupDoc> = {}; // ← キーを string に
+      const groupMap: Record<string, GroupDoc> = {};
       await Promise.all(
         items.map(async (m) => {
-          const ref = doc(db, "groups", pad6(m.group_id)); // ★pad6を使用
+          const ref = doc(db, "groups", pad6(m.group_id));
           const snap = await getDoc(ref);
           if (snap.exists())
             groupMap[pad6(m.group_id)] = snap.data() as GroupDoc;
@@ -149,7 +155,11 @@ export default function AdminDashboard() {
     return memberships
       .map((m) => groups[pad6(m.group_id)])
       .filter((g): g is GroupDoc => !!g)
-      .sort((a, b) => a.group_id - b.group_id);
+      .sort(
+        (a, b) =>
+          (b.last_updated?.seconds ?? 0) - (a.last_updated?.seconds ?? 0) ||
+          b.group_id - a.group_id // 同秒ならID降順でフォールバック
+      );
   }, [memberships, groups]);
 
   // ========== 新規グループ作成 ==========
@@ -186,6 +196,8 @@ export default function AdminDashboard() {
               creator: email,
               player_password: playerPw,
               admin_password: adminPw,
+              created_at: serverTimestamp(),
+              last_updated: serverTimestamp(),
             };
 
             // groups 作成
@@ -217,7 +229,10 @@ export default function AdminDashboard() {
             ]);
             setGroups((prev) => ({
               ...prev,
-              [String(created!.group_id).padStart(6, "0")]: created!,
+              [pad6(created!.group_id)]: {
+                ...created!,
+                last_updated: { seconds: Math.floor(Date.now() / 1000) } as any,
+              },
             }));
             break;
           }
@@ -245,7 +260,7 @@ export default function AdminDashboard() {
   // ========== 既存グループ参加 ==========
   const joinGroup = async () => {
     if (!user) return;
-    const gidStr = pad6(joinGroupId); // ★6桁0埋め
+    const gidStr = pad6(joinGroupId);
     if (!/^\d{6}$/.test(gidStr) || !joinAdminPw.trim()) {
       alert("グループID（6桁）とAdminパスワードを入力してください");
       return;
@@ -271,6 +286,10 @@ export default function AdminDashboard() {
         group_id: data.group_id,
         uid: user.uid,
         joinedAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, "groups", gidStr), {
+        last_updated: serverTimestamp(),
       });
 
       // ローカル更新
@@ -332,16 +351,6 @@ export default function AdminDashboard() {
         >
           <h2 style={{ margin: 0 }}>Admin ダッシュボード</h2>
           <div style={{ display: "flex", gap: 8 }}>
-            {/* <Link
-              to="/player"
-              style={{
-                padding: "8px 12px",
-                borderRadius: 10,
-                border: "1px solid #ddd",
-              }}
-            >
-              Player ダッシュボードへ
-            </Link> */}
             <button
               onClick={() => setOpenJoin(true)}
               style={{
@@ -408,13 +417,22 @@ export default function AdminDashboard() {
               >
                 <div>
                   <div style={{ fontWeight: 600 }}>{g.group_name}</div>
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    ID: {String(g.group_id).padStart(6, "0")} · 作成者:{" "}
-                    {g.creator}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      opacity: 0.7,
+                      display: "flex",
+                      gap: 12,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>ID: {pad6(g.group_id)}</span>
+                    <span>最終更新: {formatTs(g.last_updated)}</span>
+                    <span>作成者: {g.creator}</span>
                   </div>
                 </div>
                 <Link
-                  to={`/admin/group/${String(g.group_id).padStart(6, "0")}`}
+                  to={`/admin/group/${pad6(g.group_id)}`}
                   style={{
                     padding: "8px 12px",
                     borderRadius: 10,
@@ -494,7 +512,7 @@ export default function AdminDashboard() {
               グループ名: <strong>{createResult.group_name}</strong>
             </p>
             <p>
-              グループID: <code>{createResult.group_id}</code>
+              グループID: <code>{pad6(createResult.group_id)}</code>
             </p>
             <p>
               Player パスワード（6桁）:{" "}
@@ -522,7 +540,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() =>
-                  navigate(`/admin/group/${createResult.group_id}`)
+                  navigate(`/admin/group/${pad6(createResult.group_id)}`)
                 }
                 style={{
                   padding: "10px 14px",
@@ -552,7 +570,9 @@ export default function AdminDashboard() {
           </label>
           <input
             value={joinGroupId}
-            onChange={(e) => setJoinGroupId(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) =>
+              setJoinGroupId(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
             placeholder="整数ID"
             inputMode="numeric"
             style={{

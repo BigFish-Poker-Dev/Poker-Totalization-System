@@ -22,10 +22,8 @@ type GroupSettings = {
   // 新仕様: SB/BB を別々に固定
   stakes_sb?: number | null;
   stakes_bb?: number | null;
-
   // 後方互換（旧）："1/3" のような文字列が残っていてもパースして使えるように
   stakes_value?: string | null;
-
   ranking_top_n: number;
 };
 
@@ -66,7 +64,7 @@ type HistoryDoc = {
   balance_id: number;
   changed_at: any; // Timestamp
   change_category: "create" | "update" | "delete";
-  change_details: any; // JSON
+  change_details: any; // {before?: BalanceDoc, after?: BalanceDoc}
   changer_uid: string;
   changer_player_id: number;
 };
@@ -74,6 +72,7 @@ type HistoryDoc = {
 // ========== util ==========
 const pad6 = (n: number | string) =>
   String(n).replace(/\D/g, "").padStart(6, "0");
+const formatTs = (t?: any) => t?.toDate?.().toLocaleString?.() || "-";
 const numOr = (v: any, def = 0) =>
   typeof v === "number" && !isNaN(v) ? v : def;
 const parseLegacyStakes = (s?: string | null) => {
@@ -86,6 +85,11 @@ const fmtDiff = (v: number) => {
   const num = Math.abs(v).toFixed(1);
   const color = v >= 0 ? "#111" : "#d00";
   return { text: `${sign}${num}BB`, color };
+};
+const CAT_COLOR: Record<HistoryDoc["change_category"], string> = {
+  create: "#111111",
+  update: "#1a73e8",
+  delete: "#d93025",
 };
 
 // ========== UI 小物 ==========
@@ -247,6 +251,29 @@ export default function AdminGroupPage() {
   }
 
   if (!group) return <div style={{ padding: 24 }}>Loading...</div>;
+
+  // ========== 更新履歴：表示用に展開 ==========
+  type HRow = {
+    // 同一履歴内の行タイプ
+    kind: "single" | "before" | "after";
+    b: Partial<BalanceDoc> & { player_uid?: string };
+  };
+  function expandHistory(h: HistoryDoc): HRow[] {
+    const det = h.change_details || {};
+    if (h.change_category === "create" && det.after) {
+      return [{ kind: "single", b: det.after }];
+    }
+    if (h.change_category === "delete" && det.before) {
+      return [{ kind: "single", b: det.before }];
+    }
+    if (h.change_category === "update") {
+      const rows: HRow[] = [];
+      if (det.before) rows.push({ kind: "before", b: det.before });
+      if (det.after) rows.push({ kind: "after", b: det.after });
+      return rows;
+    }
+    return [];
+  }
 
   return (
     <div
@@ -506,6 +533,7 @@ export default function AdminGroupPage() {
                 border: "1px solid #eee",
                 borderRadius: 12,
                 padding: 12,
+                overflow: "auto",
               }}
             >
               <h3 style={{ marginTop: 0 }}>更新履歴</h3>
@@ -517,40 +545,107 @@ export default function AdminGroupPage() {
                     <tr>
                       <th style={th}>日時</th>
                       <th style={th}>種別</th>
+                      <th style={th}>行</th>
+                      <th style={th}>プレイヤー</th>
+                      <th style={th}>日付</th>
+                      <th style={th}>ステークス</th>
+                      <th style={{ ...th, textAlign: "right" }}>BuyIn</th>
+                      <th style={{ ...th, textAlign: "right" }}>Ending</th>
+                      <th style={{ ...th, textAlign: "right" }}>差分</th>
+                      <th style={th}>メモ</th>
                       <th style={th}>balance_id</th>
-                      <th style={th}>changer</th>
-                      <th style={th}>details(JSON)</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {histories.map((h, i) => (
-                      <tr key={i}>
-                        <td style={td}>
-                          {h.changed_at?.toDate?.().toLocaleString?.() || "-"}
-                        </td>
-                        <td style={td}>{h.change_category}</td>
-                        <td style={td}>{h.balance_id}</td>
-                        <td style={td}>
-                          {players[h.changer_uid]?.display_name ??
-                            h.changer_uid}
-                        </td>
-                        <td style={td}>
-                          <pre
-                            style={{
-                              margin: 0,
-                              whiteSpace: "pre-wrap",
-                              wordBreak: "break-all",
-                              fontSize: 12,
-                            }}
-                          >
-                            {JSON.stringify(h.change_details ?? {}, null, 2)}
-                          </pre>
-                        </td>
-                      </tr>
-                    ))}
+                    {histories.map((h, hi) => {
+                      const rows = expandHistory(h);
+                      if (rows.length === 0) return null;
+                      const rowSpan = rows.length;
+
+                      return rows.map((r, ri) => {
+                        const b = r.b || {};
+                        const delta =
+                          (Number(b.ending_bb) || 0) -
+                          (Number(b.buy_in_bb) || 0);
+                        const { text, color } = fmtDiff(delta);
+                        const playerName =
+                          (b.player_uid &&
+                            players[b.player_uid]?.display_name) ||
+                          players[h.changer_uid]?.display_name ||
+                          h.changer_uid;
+
+                        // 行ラベル
+                        let rowLabel = "";
+                        if (h.change_category === "update") {
+                          rowLabel = r.kind === "before" ? "Before" : "After";
+                        } else {
+                          rowLabel = "Record";
+                        }
+
+                        return (
+                          <tr key={`${hi}-${ri}`}>
+                            {/* 同一履歴の最初の行にだけ「日時・種別」を表示（rowSpan） */}
+                            {ri === 0 && (
+                              <>
+                                <td style={td} rowSpan={rowSpan}>
+                                  {formatTs(h.changed_at)}
+                                </td>
+                                <td
+                                  style={{
+                                    ...td,
+                                    color: CAT_COLOR[h.change_category],
+                                    fontWeight: 700,
+                                  }}
+                                  rowSpan={rowSpan}
+                                >
+                                  {h.change_category}
+                                </td>
+                              </>
+                            )}
+                            <td
+                              style={{
+                                ...td,
+                                whiteSpace: "nowrap",
+                                fontSize: 12,
+                                opacity: 0.8,
+                              }}
+                            >
+                              {rowLabel}
+                            </td>
+                            <td style={td}>{playerName}</td>
+                            <td style={td}>{b.date || "-"}</td>
+                            <td style={td}>{b.stakes || "-"}</td>
+                            <td style={{ ...td, textAlign: "right" }}>
+                              {b.buy_in_bb != null ? String(b.buy_in_bb) : "-"}
+                            </td>
+                            <td style={{ ...td, textAlign: "right" }}>
+                              {b.ending_bb != null ? String(b.ending_bb) : "-"}
+                            </td>
+                            <td
+                              style={{
+                                ...td,
+                                textAlign: "right",
+                                fontWeight: 600,
+                                color,
+                              }}
+                            >
+                              {b.buy_in_bb != null && b.ending_bb != null
+                                ? text
+                                : "-"}
+                            </td>
+                            <td style={td}>{b.memo || "-"}</td>
+                            <td style={td}>{h.balance_id}</td>
+                          </tr>
+                        );
+                      });
+                    })}
                   </tbody>
                 </table>
               )}
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+                ※ create/delete はその収支を1行表示、update は Before/After
+                を2行表示します。
+              </div>
             </div>
           )}
         </div>

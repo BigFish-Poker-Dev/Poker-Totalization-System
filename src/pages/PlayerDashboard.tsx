@@ -10,17 +10,20 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 
 // ===== 型 =====
 type GroupDoc = {
-  group_id: number; // 6桁数値（保管値は数値、DocIDは0埋め文字列）
+  group_id: number;
   group_name: string;
   creator: string;
-  player_password: string; // 6桁
-  admin_password: string; // 8桁
+  player_password: string;
+  admin_password: string;
+  created_at?: any;
+  last_updated?: any;
 };
 
 type PlayerMembership = {
@@ -32,6 +35,8 @@ type PlayerMembership = {
 // ===== ユーティリティ =====
 const pad6 = (n: number | string) =>
   String(n).replace(/\D/g, "").padStart(6, "0");
+
+const formatTs = (t?: any) => t?.toDate?.().toLocaleString?.() || "-";
 
 function Modal({
   open,
@@ -124,7 +129,11 @@ export default function PlayerDashboard() {
     return memberships
       .map((m) => groups[pad6(m.group_id)])
       .filter((g): g is GroupDoc => !!g)
-      .sort((a, b) => a.group_id - b.group_id);
+      .sort(
+        (a, b) =>
+          (b.last_updated?.seconds ?? 0) - (a.last_updated?.seconds ?? 0) ||
+          b.group_id - a.group_id
+      );
   }, [memberships, groups]);
 
   // ========== 既存グループに参加（player用） ==========
@@ -157,6 +166,10 @@ export default function PlayerDashboard() {
         group_id: data.group_id,
         uid: user.uid,
         joinedAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, "groups", gidStr), {
+        last_updated: serverTimestamp(),
       });
 
       // ローカル更新
@@ -285,8 +298,18 @@ export default function PlayerDashboard() {
                 >
                   <div>
                     <div style={{ fontWeight: 600 }}>{g.group_name}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      ID: {gidStr} · 作成者: {g.creator}
+                    <div
+                      style={{
+                        fontSize: 12,
+                        opacity: 0.7,
+                        display: "flex",
+                        gap: 12,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span>ID: {pad6(g.group_id)}</span>
+                      <span>最終更新: {formatTs(g.last_updated)}</span>
+                      <span>作成者: {g.creator}</span>
                     </div>
                   </div>
                   <Link

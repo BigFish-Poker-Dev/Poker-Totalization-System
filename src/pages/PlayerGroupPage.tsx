@@ -420,6 +420,10 @@ export default function PlayerGroupPage() {
           : prev
       );
 
+      await updateDoc(doc(db, "groups", groupId), {
+        last_updated: serverTimestamp(),
+      });
+
       // 履歴（create）
       await writeHistory("create", balance.balance_id, { after: balance });
 
@@ -508,6 +512,10 @@ export default function PlayerGroupPage() {
           : prev
       );
 
+      await updateDoc(doc(db, "groups", groupId), {
+        last_updated: serverTimestamp(),
+      });
+
       // 履歴（update）
       await writeHistory("update", before.balance_id, { before, after: patch });
 
@@ -547,6 +555,10 @@ export default function PlayerGroupPage() {
           ? { ...prev, total_balance: (prev.total_balance ?? 0) - delta }
           : prev
       );
+
+      await updateDoc(doc(db, "groups", groupId), {
+        last_updated: serverTimestamp(),
+      });
 
       // 履歴（delete）
       await writeHistory("delete", before.balance_id, { before });
@@ -621,7 +633,6 @@ export default function PlayerGroupPage() {
                   const { text, color } = fmtDiff(me.total_balance ?? 0);
                   return <span style={{ color }}>{text}</span>;
                 })()}
-                BB
               </strong>
             </div>
           </div>
