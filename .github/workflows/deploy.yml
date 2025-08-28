@@ -49,8 +49,8 @@ jobs:
       # （任意）CNAME をファイルで同梱したい場合
       # GitHub Pages の設定でカスタムドメインを指定すれば CNAME ファイルは必須ではありませんが、
       # 明示的に含めたい場合は以下を有効化：
-      # - name: Add CNAME
-      #   run: echo "poker-totalization-system.com" > dist/CNAME
+      - name: Add CNAME
+        run: echo "poker-totalization-system.com" > dist/CNAME
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
