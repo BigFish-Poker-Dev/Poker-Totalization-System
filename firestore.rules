@@ -1,0 +1,75 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+
+    // ===== groups ルート =====
+    match /groups/{groupDocId} {
+      // ★ 動作優先：署名済みなら作成・読取・更新可（削除は禁止）
+      allow create: if isSignedIn();
+      allow read, update: if isSignedIn();
+      allow delete: if false;
+
+      // --- players サブコレ（プロフィール） ---
+      //   PlayerGroupPage:
+      //     - 自分の /players/{uid} を作成 or 更新
+      //     - ランキングや表示名のために全員分を一覧取得（クエリ）→ 読み取りは署名済なら可
+      match /players/{uid} {
+        // ランキング・表示用に一覧取得が必要なので、署名済みなら読取可
+        allow read: if isSignedIn();
+        // 自分の doc の作成・更新のみ可
+        allow create: if isSignedIn() && uid == request.auth.uid;
+        allow update: if isSignedIn() && uid == request.auth.uid;
+        allow delete: if false;
+      }
+
+      // --- balances サブコレ（収支） ---
+      //   Player:
+      //     - 自分の収支のみ作成/編集/削除（is_deleted=true）
+      //   Admin/Player:
+      //     - ランキング用などで全体を読む
+      match /balances/{docId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+                      && request.resource.data.player_uid == request.auth.uid;
+        allow update, delete: if isSignedIn()
+                              && resource.data.player_uid == request.auth.uid;
+      }
+
+      // --- balance_histories サブコレ（更新履歴） ---
+      //   画面から addDoc しているので create は署名済みなら許可（本番はCF推奨）
+      match /balance_histories/{docId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
+    }
+
+    // ===== group_admins ルート（所属管理：Admin側） =====
+    // docId は "XXXXXX_uid"、フィールドは {group_id:int, uid:string, joinedAt:serverTimestamp()}
+    // joinedAt は transform なので keys の厳格チェックは行いません
+    match /group_admins/{docId} {
+      // 自分の membership だけ読める（Admin ダッシュボードの一覧用）
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      // 自分分だけ作成可
+      allow create: if isSignedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.group_id is int;
+      allow update, delete: if false;
+    }
+
+    // ===== group_players ルート（所属管理：Player側） =====
+    // docId は "XXXXXX_uid"、フィールドは {group_id:int, uid:string, joinedAt:serverTimestamp()}
+    match /group_players/{docId} {
+      // 自分の membership だけ読める（Player ダッシュボードの一覧用：where("uid","==",auth.uid) でOK）
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      // 自分分だけ作成可
+      allow create: if isSignedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.group_id is int;
+      allow update, delete: if false;
+    }
+  }
+}
