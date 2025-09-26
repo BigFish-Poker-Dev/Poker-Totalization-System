@@ -1,14 +1,22 @@
+// src/components/GoogleLoginButton.tsx
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import type { UserCredential } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { FcGoogle } from "react-icons/fc";
 
 type Props = {
   label: string;
-  redirectTo: string; // "/player" or "/admin"
+  redirectTo?: string; // 後方互換: 未指定なら /player へ
+  onSuccess?: (cred: UserCredential) => void | Promise<void>;
 };
 
-export default function GoogleLoginButton({ label, redirectTo }: Props) {
+export default function GoogleLoginButton({
+  label,
+  redirectTo = "/player",
+  onSuccess,
+}: Props) {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -16,9 +24,13 @@ export default function GoogleLoginButton({ label, redirectTo }: Props) {
     try {
       setBusy(true);
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // 成功したらボタンに応じたダッシュボードへ
-      navigate(redirectTo);
+      const cred = await signInWithPopup(auth, provider);
+
+      if (onSuccess) {
+        await onSuccess(cred);
+      } else {
+        navigate(redirectTo);
+      }
     } catch (e) {
       console.error(e);
       alert("ログインに失敗しました。コンソールを確認してください。");
@@ -46,7 +58,9 @@ export default function GoogleLoginButton({ label, redirectTo }: Props) {
       }}
       aria-label={label}
     >
-      <span style={{ width: 18, height: 18, display: "inline-block" }}>🔑</span>
+      <span style={{ width: 18, height: 18, display: "inline-block" }}>
+        <FcGoogle size={18} />
+      </span>
       {busy ? "ログイン中..." : label}
     </button>
   );

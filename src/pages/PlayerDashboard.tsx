@@ -25,6 +25,8 @@ type GroupDoc = {
   admin_password: string;
   created_at?: any;
   last_updated?: any;
+  creator_name?: string;
+  creator_uid?: string;
 };
 
 type PlayerMembership = {
@@ -38,6 +40,13 @@ const pad6 = (n: number | string) =>
   String(n).replace(/\D/g, "").padStart(6, "0");
 
 const formatTs = (t?: any) => t?.toDate?.().toLocaleString?.() || "-";
+
+const creatorNameOf = (g?: GroupDoc) =>
+  g?.creator_name ||
+  (g?.creator && g.creator.includes("@")
+    ? g.creator.split("@")[0]
+    : g?.creator) ||
+  "(unknown)";
 
 export default function PlayerDashboard() {
   const { user } = useAuth();
@@ -190,7 +199,7 @@ export default function PlayerDashboard() {
         >
           <h2 style={{ margin: 0 }}>Player ダッシュボード</h2>
           <div style={{ display: "flex", gap: 8 }}>
-            {/* <Link
+            <Link
               to="/admin"
               style={{
                 padding: "8px 12px",
@@ -199,7 +208,7 @@ export default function PlayerDashboard() {
               }}
             >
               Admin ダッシュボードへ
-            </Link> */}
+            </Link>
             <button
               onClick={() => setOpenJoin(true)}
               style={{
@@ -268,7 +277,7 @@ export default function PlayerDashboard() {
                     >
                       <span>ID: {pad6(g.group_id)}</span>
                       <span>最終更新: {formatTs(g.last_updated)}</span>
-                      <span>作成者: {g.creator}</span>
+                      <span>作成者: {creatorNameOf(g)}</span>
                     </div>
                   </div>
                   <Link
@@ -298,14 +307,14 @@ export default function PlayerDashboard() {
         <div>
           <h3 style={{ marginTop: 0 }}>既存グループへの参加（Player）</h3>
           <label style={{ display: "block", fontSize: 14, marginBottom: 6 }}>
-            グループID（6桁）
+            グループID
           </label>
           <input
             value={joinGroupId}
             onChange={(e) =>
               setJoinGroupId(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-            placeholder="例: 004531"
+            placeholder="整数ID (6桁)"
             inputMode="numeric"
             style={{
               width: "100%",
@@ -317,14 +326,14 @@ export default function PlayerDashboard() {
           <label
             style={{ display: "block", fontSize: 14, margin: "12px 0 6px" }}
           >
-            Player パスワード（6桁）
+            Player パスワード
           </label>
           <input
             value={joinPlayerPw}
             onChange={(e) =>
               setJoinPlayerPw(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-            placeholder="6桁の数字"
+            placeholder="数字 (6桁)"
             inputMode="numeric"
             style={{
               width: "100%",
