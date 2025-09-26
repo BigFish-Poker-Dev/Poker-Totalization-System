@@ -83,9 +83,6 @@ export default function LoginPage() {
         }}
       >
         <h1 style={{ margin: "0 0 8px" }}>Poker-Totalization-System</h1>
-        <p style={{ margin: 0, opacity: 0.7, fontSize: 14 }}>
-          環境: <code>{import.meta.env.MODE}</code>
-        </p>
 
         <div style={{ height: 24 }} />
 
@@ -106,14 +103,15 @@ export default function LoginPage() {
       >
         <h3 style={{ marginTop: 0 }}>初回ユーザー登録</h3>
         <p style={{ fontSize: 14, opacity: 0.8 }}>
-          表示名を設定してください。
+          収支ランキング等に表示される表示名を設定してください。
           <br />
-          <strong>※この表示名は後から変更できません。</strong>
+          <strong style={{ color: "red" }}>
+            ※この表示名は後から変更できません。
+          </strong>
         </p>
         <input
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="例: Yuta"
           style={{
             width: "100%",
             padding: 10,

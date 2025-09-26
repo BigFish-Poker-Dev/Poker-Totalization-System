@@ -452,7 +452,7 @@ export default function AdminDashboard() {
             <input
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
-              placeholder="例: BigFish 2025"
+              // placeholder="例: BigFish 2025"
               style={{
                 width: "100%",
                 padding: 10,
@@ -559,7 +559,7 @@ export default function AdminDashboard() {
             onChange={(e) =>
               setJoinGroupId(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-            placeholder="整数ID"
+            placeholder="整数ID (6桁)"
             inputMode="numeric"
             style={{
               width: "100%",
@@ -576,7 +576,7 @@ export default function AdminDashboard() {
           <input
             value={joinAdminPw}
             onChange={(e) => setJoinAdminPw(e.target.value)}
-            placeholder="8桁（英数字）"
+            placeholder="英数字（8桁）"
             style={{
               width: "100%",
               padding: 10,

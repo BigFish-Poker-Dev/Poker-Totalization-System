@@ -4,6 +4,7 @@ import type { UserCredential } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { FcGoogle } from "react-icons/fc";
 
 type Props = {
   label: string;
@@ -57,7 +58,9 @@ export default function GoogleLoginButton({
       }}
       aria-label={label}
     >
-      <span style={{ width: 18, height: 18, display: "inline-block" }}>🔑</span>
+      <span style={{ width: 18, height: 18, display: "inline-block" }}>
+        <FcGoogle size={18} />
+      </span>
       {busy ? "ログイン中..." : label}
     </button>
   );

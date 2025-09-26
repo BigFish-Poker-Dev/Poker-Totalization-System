@@ -307,14 +307,14 @@ export default function PlayerDashboard() {
         <div>
           <h3 style={{ marginTop: 0 }}>既存グループへの参加（Player）</h3>
           <label style={{ display: "block", fontSize: 14, marginBottom: 6 }}>
-            グループID（6桁）
+            グループID
           </label>
           <input
             value={joinGroupId}
             onChange={(e) =>
               setJoinGroupId(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-            placeholder="例: 004531"
+            placeholder="整数ID (6桁)"
             inputMode="numeric"
             style={{
               width: "100%",
@@ -326,14 +326,14 @@ export default function PlayerDashboard() {
           <label
             style={{ display: "block", fontSize: 14, margin: "12px 0 6px" }}
           >
-            Player パスワード（6桁）
+            Player パスワード
           </label>
           <input
             value={joinPlayerPw}
             onChange={(e) =>
               setJoinPlayerPw(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-            placeholder="6桁の数字"
+            placeholder="数字 (6桁)"
             inputMode="numeric"
             style={{
               width: "100%",
