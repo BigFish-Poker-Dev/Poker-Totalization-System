@@ -681,6 +681,73 @@ export default function AdminGroupPage() {
     fHBalanceId,
   ]);
 
+  // ---- 更新履歴テーブルのソート（更新日時/日付/BuyIn/Ending/差分）----
+  type HSortKey = "changed_at" | "date" | "buy_in_bb" | "ending_bb" | "delta";
+  type HSortDir = "asc" | "desc";
+  const [hSortKey, setHSortKey] = useState<HSortKey>("changed_at");
+  const [hSortDir, setHSortDir] = useState<HSortDir>("desc");
+  const [hSortClicked, setHSortClicked] = useState(false);
+
+  // 履歴をフラット化して代表値（after優先、なければbefore）を用いて並び替え
+  type FlatHistoryRow = {
+    h: HistoryDoc;
+    rows: ReturnType<typeof expandHistory>;
+    sortValue: number; // キー別の比較用値
+    rep: Partial<BalanceDoc> | undefined; // 代表行 after優先
+  };
+
+  const historiesSortedByUI = useMemo(() => {
+    const toVal = (h: HistoryDoc, rep?: Partial<BalanceDoc>): number => {
+      switch (hSortKey) {
+        case "changed_at":
+          return h.changed_at?.toMillis?.() ?? 0;
+        case "date": {
+          const d = rep?.date;
+          return d ? new Date(d).setHours(0, 0, 0, 0) : 0;
+        }
+        case "buy_in_bb":
+          return Number(rep?.buy_in_bb) || 0;
+        case "ending_bb":
+          return Number(rep?.ending_bb) || 0;
+        case "delta":
+          return (Number(rep?.ending_bb) || 0) - (Number(rep?.buy_in_bb) || 0);
+        default:
+          return 0;
+      }
+    };
+
+    const flats: FlatHistoryRow[] = historiesFiltered.map((h) => {
+      const rows = expandHistory(h);
+      const after = rows.find((r) => r.kind === "after")?.b;
+      const before = rows.find((r) => r.kind === "before")?.b;
+      const rep = after ?? before ?? rows[0]?.b;
+      return {
+        h,
+        rows,
+        rep,
+        sortValue: toVal(h, rep),
+      };
+    });
+    flats.sort((a, b) =>
+      hSortDir === "asc" ? a.sortValue - b.sortValue : b.sortValue - a.sortValue
+    );
+    return flats;
+  }, [historiesFiltered, hSortKey, hSortDir]);
+
+  const toggleHistorySort = (k: HSortKey) => {
+    let nextKey: HSortKey = hSortKey;
+    let nextDir: HSortDir = hSortDir;
+    if (hSortKey !== k) {
+      nextKey = k;
+      nextDir = "asc";
+    } else {
+      nextDir = hSortDir === "asc" ? "desc" : "asc";
+    }
+    setHSortKey(nextKey);
+    setHSortDir(nextDir);
+    setHSortClicked(true);
+  };
+
   // 収支一覧: 表示中（フィルタ後）の差分合計
   const balancesTotalDelta = useMemo(() => {
     return balancesFilteredSorted.reduce((sum, b) => {
@@ -1506,26 +1573,124 @@ export default function AdminGroupPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      <th style={th}>更新日時</th>
+                      <th style={th}>
+                        <button
+                          onClick={() => toggleHistorySort("changed_at")}
+                          style={{
+                            all: "unset",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span>更新日時</span>
+                          <span style={{ fontSize: 12, opacity: 0.7 }}>
+                            {(!hSortClicked || hSortKey !== "changed_at") &&
+                              "▲▼"}
+                            {hSortClicked &&
+                              hSortKey === "changed_at" &&
+                              (hSortDir === "asc" ? "▲" : "▼")}
+                          </span>
+                        </button>
+                      </th>
                       <th style={th}>種別</th>
                       <th style={th}>行</th>
                       <th style={th}>プレイヤー</th>
-                      <th style={th}>日付</th>
+                      <th style={th}>
+                        <button
+                          onClick={() => toggleHistorySort("date")}
+                          style={{
+                            all: "unset",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span>日付</span>
+                          <span style={{ fontSize: 12, opacity: 0.7 }}>
+                            {(!hSortClicked || hSortKey !== "date") && "▲▼"}
+                            {hSortClicked &&
+                              hSortKey === "date" &&
+                              (hSortDir === "asc" ? "▲" : "▼")}
+                          </span>
+                        </button>
+                      </th>
                       <th style={th}>ステークス</th>
-                      <th style={{ ...th, textAlign: "right" }}>BuyIn</th>
-                      <th style={{ ...th, textAlign: "right" }}>Ending</th>
-                      <th style={{ ...th, textAlign: "right" }}>差分</th>
+                      <th style={{ ...th, textAlign: "right" }}>
+                        <button
+                          onClick={() => toggleHistorySort("buy_in_bb")}
+                          style={{
+                            all: "unset",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span>BuyIn</span>
+                          <span style={{ fontSize: 12, opacity: 0.7 }}>
+                            {(!hSortClicked || hSortKey !== "buy_in_bb") &&
+                              "▲▼"}
+                            {hSortClicked &&
+                              hSortKey === "buy_in_bb" &&
+                              (hSortDir === "asc" ? "▲" : "▼")}
+                          </span>
+                        </button>
+                      </th>
+                      <th style={{ ...th, textAlign: "right" }}>
+                        <button
+                          onClick={() => toggleHistorySort("ending_bb")}
+                          style={{
+                            all: "unset",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span>Ending</span>
+                          <span style={{ fontSize: 12, opacity: 0.7 }}>
+                            {(!hSortClicked || hSortKey !== "ending_bb") &&
+                              "▲▼"}
+                            {hSortClicked &&
+                              hSortKey === "ending_bb" &&
+                              (hSortDir === "asc" ? "▲" : "▼")}
+                          </span>
+                        </button>
+                      </th>
+                      <th style={{ ...th, textAlign: "right" }}>
+                        <button
+                          onClick={() => toggleHistorySort("delta")}
+                          style={{
+                            all: "unset",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span>差分</span>
+                          <span style={{ fontSize: 12, opacity: 0.7 }}>
+                            {(!hSortClicked || hSortKey !== "delta") && "▲▼"}
+                            {hSortClicked &&
+                              hSortKey === "delta" &&
+                              (hSortDir === "asc" ? "▲" : "▼")}
+                          </span>
+                        </button>
+                      </th>
                       <th style={th}>メモ</th>
                       <th style={th}>balance_id</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {historiesFiltered.map((h, hi) => {
-                      const rows = expandHistory(h);
-                      if (rows.length === 0) return null;
-                      const rowSpan = rows.length;
+                    {historiesSortedByUI.map(({ h }, hi) => {
+                      const rows2 = expandHistory(h);
+                      if (rows2.length === 0) return null;
+                      const rowSpan = rows2.length;
 
-                      return rows.map((r, ri) => {
+                      return rows2.map((r, ri) => {
                         const b = r.b || {};
                         const delta =
                           (Number(b.ending_bb) || 0) -
