@@ -1,69 +1,80 @@
-# React + TypeScript + Vite
+# Poker Totalization System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ポーカーの戦績、グループ、収支を管理するためのWebアプリケーションです。
+プレイヤーは各グループに参加し、日々のポーカーセッションの記録（バイイン、終了時のスタックなど）をつけることができます。管理者はグループごとの設定やメンバー管理を行うことができます。
 
-Currently, two official plugins are available:
+## 機能概要
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **グループ管理**:
+  - グループの作成と設定（ステークス、ランキング設定など）
+  - パスワードによるプレイヤーおよび管理者の参加
+- **戦績記録**:
+  - セッションごとのバイイン、終了スタックの入力
+  - 収支（BB表記）の自動計算
+  - 履歴の編集と監査ログ
+- **ロールベースのアクセス制御**:
+  - **プレイヤー**: 自分の戦績の記録・閲覧、グループランキングの閲覧
+  - **管理者**: グループ設定の変更、メンバー管理
 
-## Expanding the ESLint configuration
+## 技術スタック
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend**: [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+- **Backend / BaaS**: [Firebase](https://firebase.google.com/)
+  - Authentication (Google Auth etc.)
+  - Firestore (Database)
+  - Cloud Functions (Backend logic)
+- **Routing**: [React Router](https://reactrouter.com/)
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 環境構築
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### 1. リポジトリのクローン
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone <repository-url>
+cd Poker-Totalization-System
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. 依存関係のインストール
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+### 3. 環境変数の設定
+
+プロジェクトルートに `.env` ファイル（または `.env.local`）を作成し、Firebaseの設定を追加してください。
+
+```env
+VITE_FB_API_KEY=your_api_key
+VITE_FB_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FB_PROJECT_ID=your_project_id
+VITE_FB_STORAGE_BUCKET=your_project_id.appspot.com
+VITE_FB_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FB_APP_ID=your_app_id
+```
+
+### 4. 開発サーバーの起動
+
+```bash
+npm run dev
+```
+
+ブラウザで `http://localhost:5173` (またはコンソールに表示されるURL) にアクセスしてください。
+
+## ディレクトリ構造
+
+- `src/pages`: アプリケーションの主要なページコンポーネント (Login, Dashboard, GroupPage)
+- `src/components`: 再利用可能なUIコンポーネント
+- `src/types`: TypeScriptの型定義 (Firestoreのドキュメント構造など)
+- `src/hooks`: カスタムReactフック
+- `src/lib`: ライブラリの設定 (firebase.tsなど)
+- `functions`: Firebase Cloud Functionsのコード
+
+## スクリプト
+
+- `npm run dev`: 開発サーバーを起動
+- `npm run build`: プロダクションビルドを作成
+- `npm run preview`: ビルドしたアプリをローカルでプレビュー
