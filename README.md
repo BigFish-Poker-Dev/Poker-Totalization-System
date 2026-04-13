@@ -78,3 +78,25 @@ npm run dev
 - `npm run dev`: 開発サーバーを起動
 - `npm run build`: プロダクションビルドを作成
 - `npm run preview`: ビルドしたアプリをローカルでプレビュー
+
+## GitHub Pages URL切り替え
+
+このリポジトリは、`poker-totalization-system.com` から GitHub Pages のデフォルトURLへ切り替えるため、`.github/workflows/deploy.yml` で次のスケジュールを設定しています。
+
+- 旧URL停止: 2026-04-14 00:00 JST（2026-04-13 15:00 UTC）
+- 新URL公開: 2026-04-15 00:00 JST（2026-04-14 15:00 UTC）
+- 新URL: `https://BigFish-Poker-Dev.github.io/Poker-Totalization-System/`
+
+ワークフローは GitHub Actions の遅延リスクを減らすため、各時刻の5分前に起動して対象時刻まで待機します。`master` への push は、2026-04-15 00:00 JST より前であれば Pages へデプロイせず、切り替え予定時刻を早めないようにしています。
+
+切り替え前に必要な GitHub 側の設定:
+
+- Repository secrets に `PAGES_ADMIN_TOKEN` を追加してください。Fine-grained personal access token を使う場合は、このリポジトリに対して `Pages: Read and write` と `Administration: Read and write` を付与します。未設定でもメンテナンスページのデプロイは試みますが、GitHub Pages の custom domain 解除が失敗する可能性があります。2026-04-15 00:00 JST の本公開では、custom domain 解除を確認できない場合にジョブを失敗させます。
+- Firebase Authentication を使うため、Firebase Console の Authentication > Settings > Authorized domains に `BigFish-Poker-Dev.github.io` を追加してください。
+
+DNS側で必要な作業:
+
+- `poker-totalization-system.com` の DNS レコードのうち、GitHub Pages へ向けている `A` / `AAAA` / `ALIAS` / `ANAME` / `CNAME` を削除してください。これはリポジトリや GitHub Actions からは操作できません。
+- DNS の反映には時間がかかるため、厳密な時刻で閉じたい場合はDNSプロバイダ側で予約変更するか、事前にTTLを短くしてください。
+
+手動で再実行したい場合は、GitHub Actions の `Deploy to GitHub Pages` を `workflow_dispatch` で起動し、`mode` に `close-old-link` または `publish-new-link` を指定します。
