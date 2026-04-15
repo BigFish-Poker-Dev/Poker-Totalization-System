@@ -17,7 +17,14 @@ import type {
   GroupDoc,
   PlayerDoc,
 } from "../types/poker";
-import { fmtDiff, getFixedStakes, pad6, randDigits } from "../utils/poker";
+import {
+  fmtDiff,
+  getFixedStakes,
+  getReportUnit,
+  pad6,
+  randDigits,
+  unitLabel,
+} from "../utils/poker";
 import {
   ensureMissingRankingColors,
   generateUniqueRankingColor,
@@ -201,6 +208,8 @@ export default function PlayerGroupPage() {
   }
 
   const fixed = getFixedStakes(group);
+  const reportUnit = getReportUnit(group);
+  const labelUnit = unitLabel(reportUnit);
 
   function openReportModal() {
     if (fixed) {
@@ -248,7 +257,10 @@ export default function PlayerGroupPage() {
               累計:{" "}
               <strong>
                 {(() => {
-                  const { text, color } = fmtDiff(me.total_balance ?? 0);
+                  const { text, color } = fmtDiff(
+                    me.total_balance ?? 0,
+                    reportUnit
+                  );
                   return <span style={{ color }}>{text}</span>;
                 })()}
               </strong>
@@ -313,12 +325,14 @@ export default function PlayerGroupPage() {
                   lineHeight: 1.6,
                 }}
               >
-                ※ ステークスは SB と BB を入力すると、&quot;SB/BB&quot;
-                形式で保存されます（例: 1/3）。
+                {reportUnit === "bb"
+                  ? "※ ステークスは SB と BB を入力すると、\"SB/BB\"形式で保存されます（例: 1/3）。"
+                  : "※ このグループは点数で収支を報告します。"}
                 <br />
-                グループでステークスが固定されている場合、固定値（SB/BB）が表示され編集できません。
-                <br />
-                差分 = 終了BB - バイインBB を累計に反映します。
+                {reportUnit === "bb" &&
+                  "グループでステークスが固定されている場合、固定値（SB/BB）が表示され編集できません。"}
+                {reportUnit === "bb" && <br />}
+                差分 = 終了時スタック - バイイン を累計{labelUnit}に反映します。
               </div>
             </div>
           )}
@@ -405,6 +419,7 @@ export default function PlayerGroupPage() {
               {confirmView === "calendar" && (
                 <BalanceCalendarView
                   balances={myBalancesSorted}
+                  reportUnit={reportUnit}
                   onDateClick={(date) => {
                     balanceHook.setFilterState({
                       ...INITIAL_FILTER_STATE,
@@ -417,7 +432,10 @@ export default function PlayerGroupPage() {
               )}
 
               {confirmView === "graph" && (
-                <BalanceGraphView balances={myBalancesSorted} />
+                <BalanceGraphView
+                  balances={myBalancesSorted}
+                  reportUnit={reportUnit}
+                />
               )}
 
               {confirmView === "table" && (
@@ -426,6 +444,7 @@ export default function PlayerGroupPage() {
                   {...balanceHook}
                   players={playersMap}
                   mode="player"
+                  reportUnit={reportUnit}
                   onAction={(b) => {
                     setMenuTarget(b);
                     setOpenEdit(true);
@@ -452,6 +471,7 @@ export default function PlayerGroupPage() {
                 players={playersMap}
                 topN={group!.settings?.ranking_top_n ?? 10}
                 myPlayerUid={user?.uid}
+                reportUnit={reportUnit}
               />
               <RankingTransitionGraph
                 balances={allBalances}
@@ -460,6 +480,7 @@ export default function PlayerGroupPage() {
                 title={`上位ランキング推移 (Top ${
                   group!.settings?.ranking_top_n ?? 10
                 })`}
+                reportUnit={reportUnit}
               />
               <div style={{ height: 16 }} />
             </div>

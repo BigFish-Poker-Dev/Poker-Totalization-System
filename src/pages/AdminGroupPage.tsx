@@ -21,7 +21,16 @@ import type {
   HistoryDoc,
   PlayerDoc,
 } from "../types/poker";
-import { creatorNameOf, pad6, randDigits } from "../utils/poker";
+import {
+  buyInOf,
+  deltaOf,
+  endingOf,
+  getReportUnit,
+  creatorNameOf,
+  pad6,
+  randDigits,
+  unitLabel,
+} from "../utils/poker";
 import TabButton from "../components/TabButton";
 import RankingTable from "../components/RankingTable";
 import BalanceDatabaseView from "../components/BalanceDatabaseView";
@@ -111,15 +120,15 @@ export default function AdminGroupPage() {
     if (!groupId || !group) return;
 
     const before = { ...target };
-    const deltaBefore = target.ending_bb - target.buy_in_bb;
+    const deltaBefore = deltaOf(target);
     const deltaAfter = data.ending - data.buyIn;
     const deltaDiff = deltaAfter - deltaBefore;
     const patch = {
       date: data.date,
       date_ts: Timestamp.fromDate(new Date(data.date + "T00:00:00")),
-      stakes: `${data.sb}/${data.bb}`,
-      buy_in_bb: data.buyIn,
-      ending_bb: data.ending,
+      stakes: getReportUnit(group) === "bb" ? `${data.sb}/${data.bb}` : "",
+      buy_in: data.buyIn,
+      ending: data.ending,
       memo: data.memo,
       last_updated: serverTimestamp(),
     };
@@ -180,7 +189,7 @@ export default function AdminGroupPage() {
     setDeleting(true);
     try {
       const before = { ...menuTarget };
-      const delta = menuTarget.ending_bb - menuTarget.buy_in_bb;
+      const delta = endingOf(menuTarget) - buyInOf(menuTarget);
       const history: HistoryDoc = {
         history_id: parseInt(randDigits(9), 10),
         balance_id: menuTarget.balance_id,
@@ -241,6 +250,7 @@ export default function AdminGroupPage() {
 
 
   if (!group) return <div style={{ padding: 24 }}>Loading...</div>;
+  const reportUnit = getReportUnit(group);
 
 
   return (
@@ -318,15 +328,22 @@ export default function AdminGroupPage() {
                 padding: 12,
               }}
             >
-              <h3 style={{ marginTop: 0 }}>全員のランキング（累計BB）</h3>
+              <h3 style={{ marginTop: 0 }}>
+                全員のランキング（累計{unitLabel(reportUnit)}）
+              </h3>
               <RankingTransitionGraph
                 balances={balances}
                 players={players}
                 title="全員のランキング推移"
+                reportUnit={reportUnit}
               />
               <div style={{ height: 16 }} />
               {/* Use shared component */}
-              <RankingTable balances={balances} players={players} />
+              <RankingTable
+                balances={balances}
+                players={players}
+                reportUnit={reportUnit}
+              />
             </div>
           )}
 
@@ -336,6 +353,7 @@ export default function AdminGroupPage() {
               players={players}
               mode="admin"
               {...balanceHook}
+              reportUnit={reportUnit}
               onAction={(balance) => {
                 setMenuTarget(balance);
                 setOpenEdit(true);
@@ -345,7 +363,11 @@ export default function AdminGroupPage() {
 
           {/* ========== 更新履歴 ========== */}
           {tab === "更新履歴" && (
-            <HistoryList histories={histories} players={players} />
+            <HistoryList
+              histories={histories}
+              players={players}
+              reportUnit={reportUnit}
+            />
           )}
         </div>
       </div>

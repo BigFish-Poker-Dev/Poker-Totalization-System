@@ -7,7 +7,7 @@ import {
   type BalanceItem,
 } from "../hooks/useBalanceFilter";
 import Modal from "./Modal";
-import { fmtDiff, playerNameOf } from "../utils/poker";
+import { buyInOf, endingOf, fmtDiff, playerNameOf, type ReportUnit } from "../utils/poker";
 
 type Props = {
   // Lifted state from useBalanceFilter
@@ -25,6 +25,7 @@ type Props = {
   mode: "admin" | "player";
   // Player mode might have actions
   onAction?: (b: BalanceRow) => void;
+  reportUnit?: ReportUnit;
 };
 
 export default function BalanceDatabaseView({
@@ -39,6 +40,7 @@ export default function BalanceDatabaseView({
   players,
   mode,
   onAction,
+  reportUnit = "bb",
 }: Props) {
 
   const [openFilter, setOpenFilter] = useState(false);
@@ -197,7 +199,7 @@ export default function BalanceDatabaseView({
       <div style={{ marginTop: 8, fontSize: 14 }}>
         合計（差分）:{" "}
         {(() => {
-          const { text, color } = fmtDiff(totalDelta);
+          const { text, color } = fmtDiff(totalDelta, reportUnit);
           return <span style={{ fontWeight: 700, color }}>{text}</span>;
         })()}
       </div>
@@ -283,8 +285,8 @@ export default function BalanceDatabaseView({
           <tbody>
             {sortedBalances.map((b, idx) => {
               const delta =
-                (Number(b.ending_bb) || 0) - (Number(b.buy_in_bb) || 0);
-              const { text, color } = fmtDiff(delta);
+                endingOf(b) - buyInOf(b);
+              const { text, color } = fmtDiff(delta, reportUnit);
               const name = playerNameOf(b.player_uid, players) || "(unknown)";
               const when = b.last_updated?.toDate?.() || b.date_ts?.toDate?.();
 
@@ -295,10 +297,10 @@ export default function BalanceDatabaseView({
                   <td style={td}>{b.date || "-"}</td>
                   <td style={td}>{b.stakes || "-"}</td>
                   <td style={{ ...td, textAlign: "right" }}>
-                    {b.buy_in_bb != null ? String(b.buy_in_bb) : "-"}
+                    {String(buyInOf(b))}
                   </td>
                   <td style={{ ...td, textAlign: "right" }}>
-                    {b.ending_bb != null ? String(b.ending_bb) : "-"}
+                    {String(endingOf(b))}
                   </td>
                   <td
                     style={{
@@ -308,7 +310,7 @@ export default function BalanceDatabaseView({
                       color: color,
                     }}
                   >
-                    {b.buy_in_bb != null && b.ending_bb != null ? text : "-"}
+                    {text}
                   </td>
                   <td style={td}>{b.memo || "-"}</td>
                   <td style={td}>{b.balance_id}</td>

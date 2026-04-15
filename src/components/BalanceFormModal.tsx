@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import Modal from "./Modal";
-import { getFixedStakes, parseLegacyStakes } from "../utils/poker";
+import {
+  buyInOf,
+  endingOf,
+  getFixedStakes,
+  getReportUnit,
+  parseLegacyStakes,
+  unitLabel,
+} from "../utils/poker";
 import type { BalanceDoc, GroupDoc } from "../types/poker";
 
 type Props = {
@@ -53,6 +60,8 @@ export default function BalanceFormModal({
 
   // Stabilize fixed stakes object to prevent unwanted effect re-runs
   const fixed = useMemo(() => getFixedStakes(group), [group]);
+  const reportUnit = useMemo(() => getReportUnit(group), [group]);
+  const labelUnit = unitLabel(reportUnit);
 
   // Memoize legacy stakes parsing for the same reason if balance exists
   const legacyStakes = useMemo(() => {
@@ -68,8 +77,8 @@ export default function BalanceFormModal({
       if (balance) {
         // Edit Mode
         setDate(balance.date || "");
-        setBuyIn(String(balance.buy_in_bb));
-        setEnding(String(balance.ending_bb));
+        setBuyIn(String(buyInOf(balance)));
+        setEnding(String(endingOf(balance)));
         setMemo(balance.memo || "");
 
         if (fixed) {
@@ -111,13 +120,13 @@ export default function BalanceFormModal({
   // 'fixed' is stable now thanks to useMemo, but logic-wise we only need to load it on open.
 
   const handleSave = async () => {
-    const sVal = Number(sb);
-    const bVal = Number(bb);
-    if (!date || isNaN(sVal) || isNaN(bVal)) {
+    const sVal = reportUnit === "bb" ? Number(sb) : 0;
+    const bVal = reportUnit === "bb" ? Number(bb) : 0;
+    if (!date || (reportUnit === "bb" && (isNaN(sVal) || isNaN(bVal)))) {
       alert("日付 / SB / BB を正しく入力してください");
       return;
     }
-    if (sVal <= 0 || bVal <= 0) {
+    if (reportUnit === "bb" && (sVal <= 0 || bVal <= 0)) {
       alert("SB と BB は 0 より大きい数値にしてください");
       return;
     }
@@ -186,7 +195,7 @@ export default function BalanceFormModal({
             style={inp}
           />
         </div>
-        <div>
+        {reportUnit === "bb" && <div>
           <label style={lbl}>ステークス (SB / BB)</label>
           <div style={{ display: "flex", gap: 8 }}>
             <input
@@ -214,9 +223,9 @@ export default function BalanceFormModal({
               }}
             />
           </div>
-        </div>
+        </div>}
         <div>
-          <label style={lbl}>バイイン (BB)</label>
+          <label style={lbl}>バイイン ({labelUnit})</label>
           <input
             type="number"
             placeholder="例: 100"
@@ -226,7 +235,7 @@ export default function BalanceFormModal({
           />
         </div>
         <div>
-          <label style={lbl}>終了時スタック (BB)</label>
+          <label style={lbl}>終了時スタック ({labelUnit})</label>
           <input
             type="number"
             placeholder="例: 150"

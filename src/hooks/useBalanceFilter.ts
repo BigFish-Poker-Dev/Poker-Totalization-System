@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import type { BalanceDoc, BalanceRow } from "../types/poker";
-import { toMs, toMsDateOnly, toMsDateOnlyEnd, deltaOf } from "../utils/poker";
+import {
+  buyInOf,
+  deltaOf,
+  endingOf,
+  toMs,
+  toMsDateOnly,
+  toMsDateOnlyEnd,
+} from "../utils/poker";
 
 // Extend BalanceDoc to allow __id if present, but base logic works on BalanceDoc fields
 export type BalanceItem = BalanceRow | BalanceDoc;
@@ -110,8 +117,8 @@ export function useBalanceFilter(
       )
         return false;
       // 数値系
-      const bi = Number(b.buy_in_bb);
-      const en = Number(b.ending_bb);
+      const bi = buyInOf(b);
+      const en = endingOf(b);
       const de = deltaOf(b);
       if (!isNaN(biMin) && !(bi >= biMin)) return false;
       if (!isNaN(biMax) && !(bi <= biMax)) return false;
@@ -145,9 +152,9 @@ export function useBalanceFilter(
             (b.date ? new Date(b.date).setHours(0, 0, 0, 0) : 0)
           );
         case "buy_in_bb":
-          return Number(b.buy_in_bb) ?? 0;
+          return buyInOf(b);
         case "ending_bb":
-          return Number(b.ending_bb) ?? 0;
+          return endingOf(b);
         case "delta":
           return deltaOf(b);
         default:

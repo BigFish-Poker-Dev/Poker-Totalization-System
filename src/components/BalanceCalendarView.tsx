@@ -1,13 +1,18 @@
 import { useMemo, useState } from "react";
 import type { BalanceRow } from "../types/poker";
-import { fmtDiff } from "../utils/poker";
+import { deltaOf, fmtDiff, type ReportUnit } from "../utils/poker";
 
 type Props = {
   balances: BalanceRow[];
   onDateClick?: (date: string) => void;
+  reportUnit?: ReportUnit;
 };
 
-export default function BalanceCalendarView({ balances, onDateClick }: Props) {
+export default function BalanceCalendarView({
+  balances,
+  onDateClick,
+  reportUnit = "bb",
+}: Props) {
   const [month, setMonth] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -47,7 +52,7 @@ export default function BalanceCalendarView({ balances, onDateClick }: Props) {
 
   // 月間合計
   const totalDelta = useMemo(
-    () => monthBalances.reduce((a, b) => a + (b.ending_bb - b.buy_in_bb), 0),
+    () => monthBalances.reduce((a, b) => a + deltaOf(b), 0),
     [monthBalances]
   );
 
@@ -135,11 +140,11 @@ export default function BalanceCalendarView({ balances, onDateClick }: Props) {
             : [];
           // 日次集計
           const dayDelta = dayBalances.reduce(
-            (a, b) => a + (b.ending_bb - b.buy_in_bb),
+            (a, b) => a + deltaOf(b),
             0
           );
           const hasData = dayBalances.length > 0;
-          const { text, color } = fmtDiff(dayDelta);
+          const { text, color } = fmtDiff(dayDelta, reportUnit);
 
           return (
             <div
@@ -193,7 +198,7 @@ export default function BalanceCalendarView({ balances, onDateClick }: Props) {
             color: totalDelta >= 0 ? "#111" : "#d00",
           }}
         >
-          {fmtDiff(totalDelta).text}
+          {fmtDiff(totalDelta, reportUnit).text}
         </span>
       </div>
       <div
