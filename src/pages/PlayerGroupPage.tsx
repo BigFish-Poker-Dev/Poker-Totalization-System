@@ -27,6 +27,7 @@ import TabButton from "../components/TabButton";
 import RankingTable from "../components/RankingTable";
 import BalanceDatabaseView from "../components/BalanceDatabaseView";
 import BalanceCalendarView from "../components/BalanceCalendarView";
+import BalanceGraphView from "../components/BalanceGraphView";
 import BalanceFormModal from "../components/BalanceFormModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { usePlayerActions } from "../hooks/usePlayerActions";
@@ -65,9 +66,9 @@ export default function PlayerGroupPage() {
   const [defStakesBB] = useState("");
 
   // --- 収支確認（ビュー切替・カレンダー） ---
-  const [confirmView, setConfirmView] = useState<"calendar" | "table">(
-    "calendar"
-  );
+  const [confirmView, setConfirmView] = useState<
+    "calendar" | "graph" | "table"
+  >("calendar");
 
   // --- 編集/削除（︙メニュー & モーダル）
   const [menuTarget, setMenuTarget] = useState<BalanceRow | null>(null);
@@ -350,6 +351,25 @@ export default function PlayerGroupPage() {
                     カレンダー
                   </button>
                   <button
+                    onClick={() => setConfirmView("graph")}
+                    style={{
+                      border: "none",
+                      background:
+                        confirmView === "graph" ? "#fff" : "transparent",
+                      borderRadius: 999,
+                      padding: "6px 16px",
+                      fontSize: 14,
+                      fontWeight: confirmView === "graph" ? 700 : 500,
+                      cursor: "pointer",
+                      boxShadow:
+                        confirmView === "graph"
+                          ? "0 2px 5px rgba(0,0,0,0.05)"
+                          : "none",
+                    }}
+                  >
+                    グラフ
+                  </button>
+                  <button
                     onClick={() => setConfirmView("table")}
                     style={{
                       border: "none",
@@ -383,6 +403,10 @@ export default function PlayerGroupPage() {
                     setConfirmView("table");
                   }}
                 />
+              )}
+
+              {confirmView === "graph" && (
+                <BalanceGraphView balances={myBalancesSorted} />
               )}
 
               {confirmView === "table" && (
