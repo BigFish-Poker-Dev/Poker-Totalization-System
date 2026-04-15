@@ -277,7 +277,7 @@ export default function BalanceDatabaseView({
               <SortHeader k="delta" label="差分" align="right" />
               <th style={th}>メモ</th>
               <th style={th}>ID</th>
-              {mode === "player" && <th style={th}></th>}
+              {onAction && <th style={th}></th>}
             </tr>
           </thead>
           <tbody>
@@ -312,7 +312,7 @@ export default function BalanceDatabaseView({
                   </td>
                   <td style={td}>{b.memo || "-"}</td>
                   <td style={td}>{b.balance_id}</td>
-                  {mode === "player" && (
+                  {onAction && (
                     <td style={{ ...td, textAlign: "right", width: 48 }}>
                       <button
                         onClick={() => onAction && onAction(b as BalanceRow)}
