@@ -15,6 +15,8 @@ import {
 } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal";
+import { randDigits } from "../utils/poker";
+import { normalizeColor } from "../utils/playerColors";
 
 // ===== 型 =====
 type GroupDoc = {
@@ -60,6 +62,15 @@ export default function PlayerDashboard() {
   const [joining, setJoining] = useState(false);
   const [joinGroupId, setJoinGroupId] = useState("");
   const [joinPlayerPw, setJoinPlayerPw] = useState("");
+  const [joinRankingColor, setJoinRankingColor] = useState("");
+  const [toast, setToast] = useState("");
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => {
+      setToast((current) => (current === message ? "" : current));
+    }, 3200);
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -108,8 +119,13 @@ export default function PlayerDashboard() {
   const joinGroupAsPlayer = async () => {
     if (!user) return;
     const gidStr = pad6(joinGroupId);
+    const rankingColor = normalizeColor(joinRankingColor);
     if (!/^\d{6}$/.test(gidStr) || !/^\d{6}$/.test(joinPlayerPw.trim())) {
-      alert("グループID（6桁）とPlayerパスワード（6桁）を入力してください");
+      showToast("グループID（6桁）とPlayerパスワード（6桁）を入力してください");
+      return;
+    }
+    if (!rankingColor) {
+      showToast("上位ランキンググラフで表示する自分の色を設定してください");
       return;
     }
     try {
@@ -117,14 +133,30 @@ export default function PlayerDashboard() {
       const ref = doc(db, "groups", gidStr);
       const snap = await getDoc(ref);
       if (!snap.exists()) {
-        alert("グループが見つかりません");
+        showToast("グループが見つかりません");
         setJoining(false);
         return;
       }
       const data = snap.data() as GroupDoc;
 
       if (data.player_password !== joinPlayerPw.trim()) {
-        alert("Playerパスワードが一致しません");
+        showToast("Playerパスワードが一致しません");
+        setJoining(false);
+        return;
+      }
+
+      const playersSnap = await getDocs(
+        collection(db, "groups", gidStr, "players")
+      );
+      const duplicateColor = playersSnap.docs.some((playerDoc) => {
+        if (playerDoc.id === user.uid) return false;
+        const playerColor = normalizeColor(
+          (playerDoc.data() as { ranking_color?: string }).ranking_color ?? ""
+        );
+        return playerColor === rankingColor;
+      });
+      if (duplicateColor) {
+        showToast("他のプレイヤーと同じ色です。別の色を選択してください");
         setJoining(false);
         return;
       }
@@ -135,6 +167,32 @@ export default function PlayerDashboard() {
         uid: user.uid,
         joinedAt: serverTimestamp(),
       });
+
+      const playerRef = doc(db, "groups", gidStr, "players", user.uid);
+      const playerSnap = await getDoc(playerRef);
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const displayName =
+        (userSnap.exists()
+          ? (userSnap.data() as { display_name?: string }).display_name
+          : "") ||
+        user.displayName ||
+        "No Name";
+      const existingPlayer = playerSnap.exists()
+        ? (playerSnap.data() as any)
+        : null;
+      await setDoc(
+        playerRef,
+        {
+          player_id:
+            existingPlayer?.player_id ?? parseInt(randDigits(6), 10),
+          group_id: data.group_id,
+          display_name: existingPlayer?.display_name ?? displayName,
+          email: existingPlayer?.email ?? user.email ?? "",
+          total_balance: existingPlayer?.total_balance ?? 0,
+          ranking_color: rankingColor,
+        },
+        { merge: true }
+      );
 
       await updateDoc(doc(db, "groups", gidStr), {
         last_updated: serverTimestamp(),
@@ -154,13 +212,14 @@ export default function PlayerDashboard() {
       });
       setGroups((prev) => ({ ...prev, [gidStr]: data }));
 
-      alert("グループに参加しました。");
+      showToast("グループに参加しました。");
       setOpenJoin(false);
       setJoinGroupId("");
       setJoinPlayerPw("");
+      setJoinRankingColor("");
     } catch (e) {
       console.error(e);
-      alert("参加に失敗しました。コンソールを確認してください。");
+      showToast("参加に失敗しました。コンソールを確認してください。");
     } finally {
       setJoining(false);
     }
@@ -342,6 +401,54 @@ export default function PlayerDashboard() {
               border: "1px solid #ddd",
             }}
           />
+          <label
+            style={{ display: "block", fontSize: 14, margin: "12px 0 6px" }}
+          >
+            上位ランキンググラフで表示する自分の色
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="color"
+              value={normalizeColor(joinRankingColor) || "#2563EB"}
+              onChange={(e) =>
+                setJoinRankingColor(normalizeColor(e.target.value))
+              }
+              style={{
+                width: 48,
+                height: 42,
+                padding: 4,
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+              }}
+            />
+            <input
+              value={joinRankingColor}
+              onChange={(e) => setJoinRankingColor(e.target.value.toUpperCase())}
+              placeholder="#2563EB"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                padding: 10,
+                borderRadius: 10,
+                border: "1px solid #ddd",
+              }}
+            />
+            {normalizeColor(joinRankingColor) && (
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 999,
+                  background: normalizeColor(joinRankingColor),
+                  border: "1px solid #ddd",
+                }}
+              />
+            )}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 12, color: "#777" }}>
+            必須です。他のプレイヤーと完全に同じRGBは使用できません。
+          </div>
 
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             <button
@@ -372,6 +479,27 @@ export default function PlayerDashboard() {
           </div>
         </div>
       </Modal>
+      {toast && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: 24,
+            transform: "translateX(-50%)",
+            maxWidth: "92vw",
+            padding: "10px 14px",
+            borderRadius: 8,
+            background: "#111827",
+            color: "#fff",
+            boxShadow: "0 8px 24px rgba(0,0,0,.18)",
+            zIndex: 1200,
+            fontSize: 14,
+          }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

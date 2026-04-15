@@ -4,6 +4,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSignedIn() { return request.auth != null; }
+    function isRankingColor(v) {
+      return v is string && v.matches('^#[0-9A-Fa-f]{6}$');
+    }
+    function isOnlyAddingMissingRankingColor() {
+      return isSignedIn()
+        && !('ranking_color' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ranking_color'])
+        && isRankingColor(request.resource.data.ranking_color);
+    }
 
     // ===== groups ルート =====
     match /groups/{groupDocId} {
@@ -21,7 +30,8 @@ service cloud.firestore {
         allow read: if isSignedIn();
         // 自分の doc の作成・更新のみ可
         allow create: if isSignedIn() && uid == request.auth.uid;
-        allow update: if isSignedIn() && uid == request.auth.uid;
+        allow update: if (isSignedIn() && uid == request.auth.uid)
+                      || isOnlyAddingMissingRankingColor();
         allow delete: if false;
       }
 
