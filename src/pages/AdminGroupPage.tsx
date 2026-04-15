@@ -37,7 +37,9 @@ import GroupSettingsForm from "../components/GroupSettingsForm";
 import RankingTransitionGraph from "../components/RankingTransitionGraph";
 import BalanceFormModal from "../components/BalanceFormModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import Toast from "../components/Toast";
 import { useBalanceFilter } from "../hooks/useBalanceFilter";
+import { useToast } from "../hooks/useToast";
 import { ensureMissingRankingColors } from "../utils/playerColors";
 
 // ========== ページ本体 ==========
@@ -61,6 +63,7 @@ export default function AdminGroupPage() {
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { toast, showToast } = useToast();
 
 
   useEffect(() => {
@@ -243,7 +246,7 @@ export default function AdminGroupPage() {
       setMenuTarget(null);
     } catch (error) {
       console.error(error);
-      alert("削除に失敗しました");
+      showToast("削除に失敗しました");
     } finally {
       setDeleting(false);
     }
@@ -317,7 +320,11 @@ export default function AdminGroupPage() {
         <div style={{ marginTop: 16 }}>
           {/* ========== グループ設定 ========== */}
           {tab === "グループ設定" && (
-            <GroupSettingsForm group={group} onUpdate={setGroup} />
+            <GroupSettingsForm
+              group={group}
+              onUpdate={setGroup}
+              onToast={showToast}
+            />
           )}
 
           {/* ========== 収支ランキング ========== */}
@@ -384,6 +391,7 @@ export default function AdminGroupPage() {
         onSave={async (data) => {
           if (menuTarget) await saveAdminEdit(menuTarget, data);
         }}
+        onToast={showToast}
         onDeleteRequest={() => {
           setOpenEdit(false);
           setOpenDelete(true);
@@ -399,6 +407,7 @@ export default function AdminGroupPage() {
         onDelete={deleteAdminBalance}
         deleting={deleting}
       />
+      <Toast message={toast} />
     </div>
   );
 }

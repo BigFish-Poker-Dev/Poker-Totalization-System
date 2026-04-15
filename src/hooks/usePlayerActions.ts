@@ -27,6 +27,7 @@ type ActionsProps = {
   onCloseReport?: () => void;
   onCloseEdit?: () => void;
   onCloseDelete?: () => void;
+  onToast?: (message: string) => void;
 };
 
 export function usePlayerActions({
@@ -40,6 +41,7 @@ export function usePlayerActions({
   onCloseReport,
   onCloseEdit,
   onCloseDelete,
+  onToast,
 }: ActionsProps) {
   const [deleting, setDeleting] = useState(false);
 
@@ -128,7 +130,6 @@ export function usePlayerActions({
       onCloseReport?.();
     } catch (e) {
       console.error(e);
-      alert("収支の登録に失敗しました");
       throw e;
     }
   };
@@ -198,7 +199,6 @@ export function usePlayerActions({
       onCloseEdit?.();
     } catch (e) {
       console.error(e);
-      alert("編集に失敗しました");
       throw e;
     }
   };
@@ -242,7 +242,7 @@ export function usePlayerActions({
       onCloseDelete?.();
     } catch (e) {
       console.error(e);
-      alert("削除に失敗しました");
+      onToast?.("削除に失敗しました");
     } finally {
       setDeleting(false);
     }

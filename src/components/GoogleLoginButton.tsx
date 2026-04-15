@@ -10,12 +10,14 @@ type Props = {
   label: string;
   redirectTo?: string; // 後方互換: 未指定なら /player へ
   onSuccess?: (cred: UserCredential) => void | Promise<void>;
+  onToast?: (message: string) => void;
 };
 
 export default function GoogleLoginButton({
   label,
   redirectTo = "/player",
   onSuccess,
+  onToast,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ export default function GoogleLoginButton({
       }
     } catch (e) {
       console.error(e);
-      alert("ログインに失敗しました。コンソールを確認してください。");
+      onToast?.("ログインに失敗しました。コンソールを確認してください。");
     } finally {
       setBusy(false);
     }

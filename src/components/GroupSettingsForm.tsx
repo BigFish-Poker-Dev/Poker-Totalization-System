@@ -7,9 +7,10 @@ import type { GroupDoc, GroupSettings } from "../types/poker";
 type Props = {
   group: GroupDoc;
   onUpdate: (updatedGroup: GroupDoc) => void;
+  onToast?: (message: string) => void;
 };
 
-export default function GroupSettingsForm({ group, onUpdate }: Props) {
+export default function GroupSettingsForm({ group, onUpdate, onToast }: Props) {
   const [stakesFixed, setStakesFixed] = useState(false);
   const [reportUnit, setReportUnit] = useState<"bb" | "points">("bb");
   const [stakesSB, setStakesSB] = useState<string>("");
@@ -59,7 +60,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
 
     if (unit === "bb" && fixed) {
       if (isNaN(sb) || isNaN(bb) || sb <= 0 || bb <= 0) {
-        alert("固定SB/BB は 0 より大きい数値で入力してください");
+        onToast?.("固定SB/BB は 0 より大きい数値で入力してください");
         return;
       }
     }
@@ -82,10 +83,10 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
       await updateDoc(doc(db, "groups", String(group.group_id)), payload);
       const updated = { ...group, ...payload } as GroupDoc;
       onUpdate(updated);
-      alert("保存しました");
+      onToast?.("保存しました");
     } catch (e) {
       console.error(e);
-      alert("保存に失敗しました");
+      onToast?.("保存に失敗しました");
     } finally {
       setSaving(false);
     }

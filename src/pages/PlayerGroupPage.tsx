@@ -39,7 +39,9 @@ import BalanceGraphView from "../components/BalanceGraphView";
 import BalanceFormModal from "../components/BalanceFormModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import RankingTransitionGraph from "../components/RankingTransitionGraph";
+import Toast from "../components/Toast";
 import { usePlayerActions } from "../hooks/usePlayerActions";
+import { useToast } from "../hooks/useToast";
 import {
   INITIAL_FILTER_STATE,
   useBalanceFilter,
@@ -85,6 +87,7 @@ export default function PlayerGroupPage() {
   // State variables moved to BalanceEditModal
 
   const [openDelete, setOpenDelete] = useState(false);
+  const { toast, showToast } = useToast();
 
   // -------------- 初期ロード --------------
   useEffect(() => {
@@ -215,6 +218,7 @@ export default function PlayerGroupPage() {
       setOpenDelete(false);
       setMenuTarget(null);
     },
+    onToast: showToast,
   });
 
   // -------------- 表示 --------------
@@ -511,6 +515,7 @@ export default function PlayerGroupPage() {
         defaultDate={defReportDate}
         defaultStakes={{ sb: defStakesSB, bb: defStakesBB }}
         onSave={submitBalance}
+        onToast={showToast}
       />
 
       {/* --- 編集モーダル --- */}
@@ -522,6 +527,7 @@ export default function PlayerGroupPage() {
         onSave={async (data) => {
           if (menuTarget) await saveEdit(menuTarget, data);
         }}
+        onToast={showToast}
         onDeleteRequest={() => {
           setOpenEdit(false);
           setOpenDelete(true);
@@ -537,6 +543,7 @@ export default function PlayerGroupPage() {
         }}
         deleting={deleting}
       />
+      <Toast message={toast} />
     </div>
   );
 }

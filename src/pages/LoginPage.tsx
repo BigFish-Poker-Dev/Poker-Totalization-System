@@ -2,9 +2,11 @@
 import { useState } from "react";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 import Modal from "../components/Modal";
+import Toast from "../components/Toast";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../hooks/useToast";
 
 export default function LoginPage() {
   const [openRegister, setOpenRegister] = useState(false);
@@ -13,6 +15,7 @@ export default function LoginPage() {
   const [pendingUid, setPendingUid] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast, showToast } = useToast();
 
   // Google ログイン成功後：/users/{uid} の有無で分岐
   const handleLoginSuccess = async () => {
@@ -39,7 +42,7 @@ export default function LoginPage() {
   const submitRegister = async () => {
     const name = displayName.trim();
     if (!name) {
-      alert("表示名を入力してください");
+      showToast("表示名を入力してください");
       return;
     }
     if (!pendingUid) return;
@@ -56,7 +59,7 @@ export default function LoginPage() {
       navigate("/player");
     } catch (e) {
       console.error(e);
-      alert("ユーザー登録に失敗しました。コンソールを確認してください。");
+      showToast("ユーザー登録に失敗しました。コンソールを確認してください。");
     } finally {
       setRegistering(false);
     }
@@ -91,6 +94,7 @@ export default function LoginPage() {
           label="Google ログイン"
           // 成功後の遷移は onSuccess 内で実施（初回登録/既存で分岐）
           onSuccess={handleLoginSuccess}
+          onToast={showToast}
         />
       </div>
 
@@ -147,6 +151,7 @@ export default function LoginPage() {
           </button>
         </div>
       </Modal>
+      <Toast message={toast} />
     </div>
   );
 }

@@ -17,6 +17,8 @@ import {
 } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Modal from "../components/Modal";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
 // ===== 型 =====
 type GroupDoc = {
@@ -86,6 +88,7 @@ export default function AdminDashboard() {
   const [joining, setJoining] = useState(false);
   const [joinGroupId, setJoinGroupId] = useState<string>("");
   const [joinAdminPw, setJoinAdminPw] = useState("");
+  const { toast, showToast } = useToast();
 
   // ========== 所属しているグループ一覧 ==========
   useEffect(() => {
@@ -134,7 +137,7 @@ export default function AdminDashboard() {
   const createGroup = async () => {
     if (!user) return;
     if (!newGroupName.trim()) {
-      alert("グループ名を入力してください");
+      showToast("グループ名を入力してください");
       return;
     }
     try {
@@ -223,11 +226,11 @@ export default function AdminDashboard() {
       }
 
       if (!created) {
-        alert("ID生成に失敗しました。もう一度お試しください。");
+        showToast("ID生成に失敗しました。もう一度お試しください。");
       }
     } catch (e) {
       console.error(e);
-      alert("グループ作成に失敗しました。コンソールを確認してください。");
+      showToast("グループ作成に失敗しました。コンソールを確認してください。");
     } finally {
       setCreating(false);
     }
@@ -238,7 +241,7 @@ export default function AdminDashboard() {
     if (!user) return;
     const gidStr = pad6(joinGroupId);
     if (!/^\d{6}$/.test(gidStr) || !joinAdminPw.trim()) {
-      alert("グループID（6桁）とAdminパスワードを入力してください");
+      showToast("グループID（6桁）とAdminパスワードを入力してください");
       return;
     }
     try {
@@ -246,13 +249,13 @@ export default function AdminDashboard() {
       const ref = doc(db, "groups", gidStr);
       const snap = await getDoc(ref);
       if (!snap.exists()) {
-        alert("グループが見つかりません");
+        showToast("グループが見つかりません");
         setJoining(false);
         return;
       }
       const data = snap.data() as GroupDoc;
       if (data.admin_password !== joinAdminPw.trim()) {
-        alert("Adminパスワードが一致しません");
+        showToast("Adminパスワードが一致しません");
         setJoining(false);
         return;
       }
@@ -282,13 +285,13 @@ export default function AdminDashboard() {
       });
       setGroups((prev) => ({ ...prev, [gidStr]: data }));
 
-      alert("ログインに成功しました。グループに参加しました。");
+      showToast("ログインに成功しました。グループに参加しました。");
       setOpenJoin(false);
       setJoinGroupId("");
       setJoinAdminPw("");
     } catch (e) {
       console.error(e);
-      alert("参加に失敗しました。コンソールを確認してください。");
+      showToast("参加に失敗しました。コンソールを確認してください。");
     } finally {
       setJoining(false);
     }
@@ -614,6 +617,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </Modal>
+      <Toast message={toast} />
     </div>
   );
 }

@@ -15,6 +15,8 @@ import {
 } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 import { randDigits } from "../utils/poker";
 import { normalizeColor } from "../utils/playerColors";
 
@@ -63,14 +65,7 @@ export default function PlayerDashboard() {
   const [joinGroupId, setJoinGroupId] = useState("");
   const [joinPlayerPw, setJoinPlayerPw] = useState("");
   const [joinRankingColor, setJoinRankingColor] = useState("");
-  const [toast, setToast] = useState("");
-
-  const showToast = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => {
-      setToast((current) => (current === message ? "" : current));
-    }, 3200);
-  };
+  const { toast, showToast } = useToast();
 
   useEffect(() => {
     const fetch = async () => {
@@ -479,27 +474,7 @@ export default function PlayerDashboard() {
           </div>
         </div>
       </Modal>
-      {toast && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            left: "50%",
-            bottom: 24,
-            transform: "translateX(-50%)",
-            maxWidth: "92vw",
-            padding: "10px 14px",
-            borderRadius: 8,
-            background: "#111827",
-            color: "#fff",
-            boxShadow: "0 8px 24px rgba(0,0,0,.18)",
-            zIndex: 1200,
-            fontSize: 14,
-          }}
-        >
-          {toast}
-        </div>
-      )}
+      <Toast message={toast} />
     </div>
   );
 }

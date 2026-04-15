@@ -34,6 +34,7 @@ type Props = {
   
   // Delete action is only available in Edit mode
   onDeleteRequest?: () => void;
+  onToast?: (message: string) => void;
 };
 
 export default function BalanceFormModal({
@@ -45,6 +46,7 @@ export default function BalanceFormModal({
   defaultStakes,
   onSave,
   onDeleteRequest,
+  onToast,
 }: Props) {
   const isEdit = !!balance;
   const title = isEdit ? "収支を編集" : "収支を報告";
@@ -124,17 +126,17 @@ export default function BalanceFormModal({
     const sVal = reportUnit === "bb" ? Number(sb) : 0;
     const bVal = reportUnit === "bb" ? Number(bb) : 0;
     if (!date || (reportUnit === "bb" && (isNaN(sVal) || isNaN(bVal)))) {
-      alert("日付 / SB / BB を正しく入力してください");
+      onToast?.("日付 / SB / BB を正しく入力してください");
       return;
     }
     if (reportUnit === "bb" && (sVal <= 0 || bVal <= 0)) {
-      alert("SB と BB は 0 より大きい数値にしてください");
+      onToast?.("SB と BB は 0 より大きい数値にしてください");
       return;
     }
     const buyInVal = Number(buyIn);
     const endingVal = Number(ending);
     if (isNaN(buyInVal) || isNaN(endingVal)) {
-      alert("バイイン / 終了時スタック を正しく入力してください");
+      onToast?.("バイイン / 終了時スタック を正しく入力してください");
       return;
     }
 
@@ -162,7 +164,7 @@ export default function BalanceFormModal({
       onClose();
     } catch (e) {
       console.error(e);
-      alert(`${isEdit ? "保存" : "登録"}に失敗しました`);
+      onToast?.(`${isEdit ? "保存" : "登録"}に失敗しました`);
     } finally {
       setSaving(false);
     }
