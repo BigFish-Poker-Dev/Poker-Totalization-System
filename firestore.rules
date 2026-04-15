@@ -4,6 +4,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSignedIn() { return request.auth != null; }
+    function isGroupAdmin(groupDocId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/group_admins/$(groupDocId + '_' + request.auth.uid));
+    }
     function isRankingColor(v) {
       return v is string && v.matches('^#[0-9A-Fa-f]{6}$');
     }
@@ -31,6 +35,7 @@ service cloud.firestore {
         // 自分の doc の作成・更新のみ可
         allow create: if isSignedIn() && uid == request.auth.uid;
         allow update: if (isSignedIn() && uid == request.auth.uid)
+                      || isGroupAdmin(groupDocId)
                       || isOnlyAddingMissingRankingColor();
         allow delete: if false;
       }
@@ -45,7 +50,8 @@ service cloud.firestore {
         allow create: if isSignedIn()
                       && request.resource.data.player_uid == request.auth.uid;
         allow update, delete: if isSignedIn()
-                              && resource.data.player_uid == request.auth.uid;
+                              && (resource.data.player_uid == request.auth.uid
+                                  || isGroupAdmin(groupDocId));
       }
 
       // --- balance_histories サブコレ（更新履歴） ---
