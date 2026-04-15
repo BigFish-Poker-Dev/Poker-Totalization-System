@@ -2,7 +2,7 @@
   "name": "react-vite-dev",
   "dockerComposeFile": "docker-compose.yml",
   "service": "web",
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceFolder": "/workspaces/app",
   "remoteUser": "node",
   "customizations": {
     "vscode": {
