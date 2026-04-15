@@ -1,9 +1,10 @@
 import {
   CAT_COLOR,
-  buyInOf,
-  deltaOf,
-  endingOf,
+  buyInInUnit,
+  deltaInUnit,
+  endingInUnit,
   formatTs,
+  fmtAmount,
   playerNameOf,
   fmtDiff,
   type ReportUnit,
@@ -35,7 +36,7 @@ export default function HistoryList({
     toggleSort,
     historiesFiltered, // sorted FlatHistoryRow[]
     clearFilter,
-  } = useHistoryFilter(histories, players);
+  } = useHistoryFilter(histories, players, reportUnit);
 
   const [openFilter, setOpenFilter] = useState(false);
 
@@ -287,7 +288,7 @@ export default function HistoryList({
               const rowSpan = isStart ? rows.length : 0;
               const showMeta = isStart;
 
-              const delta = deltaOf(r.b);
+              const delta = deltaInUnit(r.b, reportUnit);
               const dInfo = fmtDiff(delta, reportUnit);
 
               return (
@@ -337,8 +338,12 @@ export default function HistoryList({
                   </td>
                   <td style={td}>{r.b.date}</td>
                   <td style={td}>{r.b.stakes}</td>
-                  <td style={{ ...td, textAlign: "right" }}>{buyInOf(r.b)}</td>
-                  <td style={{ ...td, textAlign: "right" }}>{endingOf(r.b)}</td>
+                  <td style={{ ...td, textAlign: "right" }}>
+                    {fmtAmount(buyInInUnit(r.b, reportUnit))}
+                  </td>
+                  <td style={{ ...td, textAlign: "right" }}>
+                    {fmtAmount(endingInUnit(r.b, reportUnit))}
+                  </td>
                   <td
                     style={{
                       ...td,

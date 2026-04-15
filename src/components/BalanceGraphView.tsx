@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BalanceRow } from "../types/poker";
-import { deltaOf, fmtDiff, type ReportUnit } from "../utils/poker";
+import { deltaInUnit, fmtDiff, type ReportUnit } from "../utils/poker";
 import Modal from "./Modal";
 
 type Props = {
@@ -83,7 +83,7 @@ export default function BalanceGraphView({ balances, reportUnit = "bb" }: Props)
       if (dateEnd && balance.date > dateEnd) return;
       dailyDelta.set(
         balance.date,
-        (dailyDelta.get(balance.date) ?? 0) + deltaOf(balance),
+        (dailyDelta.get(balance.date) ?? 0) + deltaInUnit(balance, reportUnit),
       );
     });
 
@@ -166,7 +166,7 @@ export default function BalanceGraphView({ balances, reportUnit = "bb" }: Props)
     }));
 
     return { points, yTicks, xTicks, minY, maxY };
-  }, [balances, dateStart, dateEnd]);
+  }, [balances, dateStart, dateEnd, reportUnit]);
 
   const pathData = graph.points
     .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)

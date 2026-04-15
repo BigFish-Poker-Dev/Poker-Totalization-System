@@ -18,6 +18,7 @@ import type {
   PlayerDoc,
 } from "../types/poker";
 import {
+  deltaInUnit,
   fmtDiff,
   getFixedStakes,
   getReportUnit,
@@ -175,7 +176,21 @@ export default function PlayerGroupPage() {
     [myBalances],
   );
 
-  const balanceHook = useBalanceFilter(myBalances as BalanceRow[]);
+  const reportUnit = getReportUnit(group);
+  const balanceHook = useBalanceFilter(
+    myBalances as BalanceRow[],
+    "last_updated",
+    "desc",
+    reportUnit,
+  );
+  const displayedTotal = useMemo(
+    () =>
+      myBalances.reduce(
+        (sum, balance) => sum + deltaInUnit(balance, reportUnit, group),
+        0,
+      ),
+    [myBalances, reportUnit, group],
+  );
 
   // -------------- 共通: 履歴作成 --------------
   // -------------- アクション (Hook) --------------
@@ -208,7 +223,6 @@ export default function PlayerGroupPage() {
   }
 
   const fixed = getFixedStakes(group);
-  const reportUnit = getReportUnit(group);
   const labelUnit = unitLabel(reportUnit);
 
   function openReportModal() {
@@ -258,7 +272,7 @@ export default function PlayerGroupPage() {
               <strong>
                 {(() => {
                   const { text, color } = fmtDiff(
-                    me.total_balance ?? 0,
+                    displayedTotal,
                     reportUnit
                   );
                   return <span style={{ color }}>{text}</span>;

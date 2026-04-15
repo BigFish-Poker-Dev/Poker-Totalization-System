@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { BalanceDoc, PlayerDoc } from "../types/poker";
-import { deltaOf, fmtDiff, unitLabel, type ReportUnit } from "../utils/poker";
+import { deltaInUnit, fmtDiff, unitLabel, type ReportUnit } from "../utils/poker";
 
 type Props = {
   balances: BalanceDoc[];
@@ -22,7 +22,7 @@ export default function RankingTable({
     const sums: Record<string, number> = {};
     balances.forEach((b) => {
       sums[b.player_uid] =
-        (sums[b.player_uid] ?? 0) + deltaOf(b);
+        (sums[b.player_uid] ?? 0) + deltaInUnit(b, reportUnit);
     });
     const rows: RankRow[] = Object.entries(sums)
       .map(([uid, total]) => ({
@@ -32,7 +32,7 @@ export default function RankingTable({
       }))
       .sort((a, b) => b.total - a.total);
     return rows;
-  }, [balances, players]);
+  }, [balances, players, reportUnit]);
 
   const displayRows = useMemo(() => {
     if (!topN) return ranking;

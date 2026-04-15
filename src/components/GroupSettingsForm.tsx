@@ -47,6 +47,15 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
     const unit = reportUnit;
     const sb = Number(stakesSB);
     const bb = Number(stakesBB);
+    const currentStakes = parseLegacyStakes(group.settings?.stakes_value);
+    const preservedSb =
+      typeof group.settings?.stakes_sb === "number"
+        ? group.settings.stakes_sb
+        : currentStakes.sb;
+    const preservedBb =
+      typeof group.settings?.stakes_bb === "number"
+        ? group.settings.stakes_bb
+        : currentStakes.bb;
 
     if (unit === "bb" && fixed) {
       if (isNaN(sb) || isNaN(bb) || sb <= 0 || bb <= 0) {
@@ -61,9 +70,9 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
         settings: {
           report_unit: unit,
           stakes_fixed: unit === "bb" ? fixed : false,
-          stakes_sb: unit === "bb" && fixed ? sb : null,
-          stakes_bb: unit === "bb" && fixed ? bb : null,
-          // 後方互換: 旧 stakes_value は使わない（null推奨）
+          stakes_sb: unit === "bb" && fixed ? sb : preservedSb ?? null,
+          stakes_bb: unit === "bb" && fixed ? bb : preservedBb ?? null,
+          // 後方互換: 旧 stakes_value は使わない。数値は stakes_sb / stakes_bb に保持する。
           stakes_value: null,
           ranking_top_n: Number(topN) || 10,
         } as GroupSettings,
