@@ -11,6 +11,7 @@ type Props = {
 
 export default function GroupSettingsForm({ group, onUpdate }: Props) {
   const [stakesFixed, setStakesFixed] = useState(false);
+  const [reportUnit, setReportUnit] = useState<"bb" | "points">("bb");
   const [stakesSB, setStakesSB] = useState<string>("");
   const [stakesBB, setStakesBB] = useState<string>("");
   const [topN, setTopN] = useState<number>(10);
@@ -20,6 +21,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
   useEffect(() => {
     if (!group) return;
     const s = group.settings;
+    setReportUnit(s?.report_unit === "points" ? "points" : "bb");
     setStakesFixed(!!s?.stakes_fixed);
 
     // 新仕様: stakes_sb/ stakes_bb 優先、なければ旧 stakes_value をパース
@@ -42,10 +44,11 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
     if (!group) return;
 
     const fixed = stakesFixed;
+    const unit = reportUnit;
     const sb = Number(stakesSB);
     const bb = Number(stakesBB);
 
-    if (fixed) {
+    if (unit === "bb" && fixed) {
       if (isNaN(sb) || isNaN(bb) || sb <= 0 || bb <= 0) {
         alert("固定SB/BB は 0 より大きい数値で入力してください");
         return;
@@ -56,9 +59,10 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
     try {
       const payload = {
         settings: {
-          stakes_fixed: fixed,
-          stakes_sb: fixed ? sb : null,
-          stakes_bb: fixed ? bb : null,
+          report_unit: unit,
+          stakes_fixed: unit === "bb" ? fixed : false,
+          stakes_sb: unit === "bb" && fixed ? sb : null,
+          stakes_bb: unit === "bb" && fixed ? bb : null,
           // 後方互換: 旧 stakes_value は使わない（null推奨）
           stakes_value: null,
           ranking_top_n: Number(topN) || 10,
@@ -94,7 +98,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      {/* 1) ステークス固定（SB/BB） */}
+      {/* 1) 報告・表示形式 */}
       <div
         style={{
           border: "1px solid #eee",
@@ -102,11 +106,47 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
           padding: 12,
         }}
       >
-        <h3 style={{ marginTop: 0 }}>1) ステークス固定（SB/BB）</h3>
+        <h3 style={{ marginTop: 0 }}>1) 報告・表示形式</h3>
+        <div style={{ display: "grid", gap: 8 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="radio"
+              name="report_unit"
+              checked={reportUnit === "bb"}
+              onChange={() => setReportUnit("bb")}
+            />
+            BB数で収支を報告・表示する
+          </label>
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="radio"
+              name="report_unit"
+              checked={reportUnit === "points"}
+              onChange={() => {
+                setReportUnit("points");
+                setStakesFixed(false);
+              }}
+            />
+            点数で収支を報告・表示する
+          </label>
+        </div>
+      </div>
+
+      {/* 2) ステークス固定（SB/BB） */}
+      <div
+        style={{
+          border: "1px solid #eee",
+          borderRadius: 12,
+          padding: 12,
+          opacity: reportUnit === "bb" ? 1 : 0.55,
+        }}
+      >
+        <h3 style={{ marginTop: 0 }}>2) ステークス固定（SB/BB）</h3>
         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input
             type="checkbox"
             checked={stakesFixed}
+            disabled={reportUnit !== "bb"}
             onChange={(e) => setStakesFixed(e.target.checked)}
           />
           ステークスを固定する
@@ -129,7 +169,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
               }
               inputMode="decimal"
               placeholder="例: 1"
-              disabled={!stakesFixed}
+              disabled={reportUnit !== "bb" || !stakesFixed}
               style={inp}
             />
           </div>
@@ -142,19 +182,19 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
               }
               inputMode="decimal"
               placeholder="例: 3"
-              disabled={!stakesFixed}
+              disabled={reportUnit !== "bb" || !stakesFixed}
               style={inp}
             />
           </div>
         </div>
 
         <div style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
-          ※ 固定ONの場合、Player の「収支報告」「編集」では SB/BB
-          がこの固定値で表示され、編集できません。
+          ※ BB数で報告する場合のみ有効です。固定ONの場合、Player
+          の「収支報告」「編集」では SB/BB がこの固定値で表示され、編集できません。
         </div>
       </div>
 
-      {/* 2) ランキング上位N */}
+      {/* 3) ランキング上位N */}
       <div
         style={{
           border: "1px solid #eee",
@@ -162,7 +202,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
           padding: 12,
         }}
       >
-        <h3 style={{ marginTop: 0 }}>2) Player公開ランキングの上位N</h3>
+        <h3 style={{ marginTop: 0 }}>3) Player公開ランキングの上位N</h3>
         <input
           value={topN}
           onChange={(e) =>
@@ -178,7 +218,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
         />
       </div>
 
-      {/* 3) グループ名変更・ID/PW */}
+      {/* 4) グループ名変更・ID/PW */}
       <div
         style={{
           border: "1px solid #eee",
@@ -187,7 +227,7 @@ export default function GroupSettingsForm({ group, onUpdate }: Props) {
         }}
       >
         <h3 style={{ marginTop: 0 }}>
-          3) グループ名の変更 / ID・パスワード確認
+          4) グループ名の変更 / ID・パスワード確認
         </h3>
         <label style={lbl}>グループ名</label>
         <input

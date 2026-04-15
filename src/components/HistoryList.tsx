@@ -1,8 +1,12 @@
 import {
   CAT_COLOR,
+  buyInOf,
+  deltaOf,
+  endingOf,
   formatTs,
   playerNameOf,
   fmtDiff,
+  type ReportUnit,
 } from "../utils/poker";
 import Modal from "./Modal";
 import type { HistoryDoc, PlayerDoc } from "../types/poker";
@@ -15,9 +19,14 @@ import { useState, useMemo } from "react";
 type Props = {
   histories: HistoryDoc[];
   players: Record<string, PlayerDoc>;
+  reportUnit?: ReportUnit;
 };
 
-export default function HistoryList({ histories, players }: Props) {
+export default function HistoryList({
+  histories,
+  players,
+  reportUnit = "bb",
+}: Props) {
   const {
     filter,
     setFilter,
@@ -278,9 +287,8 @@ export default function HistoryList({ histories, players }: Props) {
               const rowSpan = isStart ? rows.length : 0;
               const showMeta = isStart;
 
-              const delta =
-                (Number(r.b.ending_bb) || 0) - (Number(r.b.buy_in_bb) || 0);
-              const dInfo = fmtDiff(delta);
+              const delta = deltaOf(r.b);
+              const dInfo = fmtDiff(delta, reportUnit);
 
               return (
                 <tr
@@ -329,8 +337,8 @@ export default function HistoryList({ histories, players }: Props) {
                   </td>
                   <td style={td}>{r.b.date}</td>
                   <td style={td}>{r.b.stakes}</td>
-                  <td style={{ ...td, textAlign: "right" }}>{r.b.buy_in_bb}</td>
-                  <td style={{ ...td, textAlign: "right" }}>{r.b.ending_bb}</td>
+                  <td style={{ ...td, textAlign: "right" }}>{buyInOf(r.b)}</td>
+                  <td style={{ ...td, textAlign: "right" }}>{endingOf(r.b)}</td>
                   <td
                     style={{
                       ...td,

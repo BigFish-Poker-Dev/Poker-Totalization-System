@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { randDigits } from "../utils/poker";
+import { buyInOf, deltaOf, endingOf, getReportUnit, randDigits } from "../utils/poker";
 import type {
   BalanceDoc,
   BalanceRow,
@@ -76,6 +76,7 @@ export function usePlayerActions({
 
     try {
       const stakesStr = `${sb}/${bb}`;
+      const reportUnit = getReportUnit(group);
 
       const balance: BalanceDoc = {
         balance_id: parseInt(randDigits(9), 10),
@@ -84,9 +85,9 @@ export function usePlayerActions({
         player_uid: user.uid,
         date: date,
         date_ts: Timestamp.fromDate(new Date(date + "T00:00:00")),
-        stakes: stakesStr,
-        buy_in_bb: buyIn,
-        ending_bb: ending,
+        stakes: reportUnit === "bb" ? stakesStr : "",
+        buy_in: buyIn,
+        ending: ending,
         memo: memo || "",
         last_updated: serverTimestamp(),
         is_deleted: false,
@@ -150,14 +151,14 @@ export function usePlayerActions({
       const ref = doc(db, "groups", groupId, "balances", menuTarget.__id);
 
       const before = { ...menuTarget };
-      const deltaBefore = menuTarget.ending_bb - menuTarget.buy_in_bb;
+      const deltaBefore = deltaOf(menuTarget);
 
       const patch = {
         date,
         date_ts: Timestamp.fromDate(new Date(date + "T00:00:00")),
-        stakes: `${sb}/${bb}`,
-        buy_in_bb: buyIn,
-        ending_bb: ending,
+        stakes: getReportUnit(group) === "bb" ? `${sb}/${bb}` : "",
+        buy_in: buyIn,
+        ending: ending,
         memo,
         last_updated: serverTimestamp(),
       };
@@ -217,7 +218,7 @@ export function usePlayerActions({
       setAllBalances((prev) => prev.filter((x) => x.__id !== menuTarget.__id));
 
       // Revert total balance
-      const delta = menuTarget.ending_bb - menuTarget.buy_in_bb;
+      const delta = endingOf(menuTarget) - buyInOf(menuTarget);
       await updateDoc(doc(db, "groups", groupId, "players", user.uid), {
         total_balance: (me.total_balance ?? 0) - delta,
       });

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BalanceDoc, HistoryDoc, PlayerDoc } from "../types/poker";
-import { toMs } from "../utils/poker";
+import { buyInOf, deltaOf, endingOf, toMs } from "../utils/poker";
 
 export type HSortKey = "changed_at" | "date" | "buy_in_bb" | "ending_bb" | "delta";
 export type HSortDir = "asc" | "desc";
@@ -129,17 +129,17 @@ export function useHistoryFilter(
         if (filter.stakes && (b.stakes || "").indexOf(filter.stakes) === -1)
           return false;
         // BuyIn
-        if (filter.buyInMin && (Number(b.buy_in_bb) || 0) < Number(filter.buyInMin))
+        if (filter.buyInMin && buyInOf(b) < Number(filter.buyInMin))
           return false;
-        if (filter.buyInMax && (Number(b.buy_in_bb) || 0) > Number(filter.buyInMax))
+        if (filter.buyInMax && buyInOf(b) > Number(filter.buyInMax))
           return false;
         // Ending
-        if (filter.endingMin && (Number(b.ending_bb) || 0) < Number(filter.endingMin))
+        if (filter.endingMin && endingOf(b) < Number(filter.endingMin))
           return false;
-        if (filter.endingMax && (Number(b.ending_bb) || 0) > Number(filter.endingMax))
+        if (filter.endingMax && endingOf(b) > Number(filter.endingMax))
           return false;
         
-        const delta = (Number(b.ending_bb) || 0) - (Number(b.buy_in_bb) || 0);
+        const delta = deltaOf(b);
         if (filter.deltaMin && delta < Number(filter.deltaMin)) return false;
         if (filter.deltaMax && delta > Number(filter.deltaMax)) return false;
 
@@ -190,11 +190,11 @@ export function useHistoryFilter(
           return d ? new Date(d).setHours(0, 0, 0, 0) : 0;
         }
         case "buy_in_bb":
-          return Number(rep?.buy_in_bb) || 0;
+          return rep ? buyInOf(rep) : 0;
         case "ending_bb":
-          return Number(rep?.ending_bb) || 0;
+          return rep ? endingOf(rep) : 0;
         case "delta":
-          return (Number(rep?.ending_bb) || 0) - (Number(rep?.buy_in_bb) || 0);
+          return rep ? deltaOf(rep) : 0;
         default:
           return 0;
       }

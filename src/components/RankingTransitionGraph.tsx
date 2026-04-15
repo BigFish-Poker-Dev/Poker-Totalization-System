@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BalanceDoc, PlayerDoc } from "../types/poker";
-import { deltaOf } from "../utils/poker";
+import { deltaOf, unitLabel, type ReportUnit } from "../utils/poker";
 import { playerRankingColor } from "../utils/playerColors";
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   players: Record<string, PlayerDoc>;
   rankLimit?: number;
   title?: string;
+  reportUnit?: ReportUnit;
 };
 
 type RankPoint = {
@@ -50,6 +51,7 @@ export default function RankingTransitionGraph({
   players,
   rankLimit,
   title = "ランキング推移",
+  reportUnit = "bb",
 }: Props) {
   const [hoverDate, setHoverDate] = useState<string | null>(null);
 
@@ -243,7 +245,7 @@ export default function RankingTransitionGraph({
         <div>
           <h3 style={{ margin: 0 }}>{title}</h3>
           <div style={{ marginTop: 4, fontSize: 12, color: "#777" }}>
-            日付ごとの累計BB順位
+            日付ごとの累計{unitLabel(reportUnit)}順位
           </div>
         </div>
         {hoverDate && (
@@ -252,7 +254,8 @@ export default function RankingTransitionGraph({
             {hoveredRanks.slice(0, 6).map((point) => (
               <div key={point.uid}>
                 {point.rank}位 {playerName(point.uid, players)} (
-                {point.total.toFixed(1)}BB)
+                {point.total.toFixed(1)}
+                {unitLabel(reportUnit)})
               </div>
             ))}
           </div>

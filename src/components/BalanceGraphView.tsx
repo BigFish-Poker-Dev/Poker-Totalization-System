@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import type { BalanceRow } from "../types/poker";
-import { deltaOf, fmtDiff } from "../utils/poker";
+import { deltaOf, fmtDiff, type ReportUnit } from "../utils/poker";
 import Modal from "./Modal";
 
 type Props = {
   balances: BalanceRow[];
+  reportUnit?: ReportUnit;
 };
 
 type GraphPoint = {
@@ -67,7 +68,7 @@ function buildNiceAxis(minValue: number, maxValue: number) {
   return { minY, maxY, yTicks };
 }
 
-export default function BalanceGraphView({ balances }: Props) {
+export default function BalanceGraphView({ balances, reportUnit = "bb" }: Props) {
   const [hovered, setHovered] = useState<GraphPoint | null>(null);
   const [openFilter, setOpenFilter] = useState(false);
   const [dateStart, setDateStart] = useState("");
@@ -219,7 +220,7 @@ export default function BalanceGraphView({ balances }: Props) {
               {displayedPoint.date}
             </span>
             {(() => {
-              const { text, color } = fmtDiff(displayedPoint.cumulative);
+              const { text, color } = fmtDiff(displayedPoint.cumulative, reportUnit);
               return <strong style={{ color }}>{text}</strong>;
             })()}
           </div>
@@ -463,7 +464,7 @@ export default function BalanceGraphView({ balances }: Props) {
                         fontWeight={700}
                         fill="#fff"
                       >
-                        {fmtDiff(hovered.cumulative).text}
+                        {fmtDiff(hovered.cumulative, reportUnit).text}
                       </text>
                     </g>
                   </g>

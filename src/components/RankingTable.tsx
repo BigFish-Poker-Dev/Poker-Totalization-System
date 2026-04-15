@@ -1,12 +1,13 @@
 import { useMemo } from "react";
 import type { BalanceDoc, PlayerDoc } from "../types/poker";
-import { fmtDiff } from "../utils/poker";
+import { deltaOf, fmtDiff, unitLabel, type ReportUnit } from "../utils/poker";
 
 type Props = {
   balances: BalanceDoc[];
   players: Record<string, PlayerDoc>;
   topN?: number; // If provided, slice the result
   myPlayerUid?: string; // If provided, highlight self & ensure visibility
+  reportUnit?: ReportUnit;
 };
 
 export default function RankingTable({
@@ -14,13 +15,14 @@ export default function RankingTable({
   players,
   topN,
   myPlayerUid,
+  reportUnit = "bb",
 }: Props) {
   const ranking = useMemo(() => {
     type RankRow = { uid: string; name: string; total: number };
     const sums: Record<string, number> = {};
     balances.forEach((b) => {
       sums[b.player_uid] =
-        (sums[b.player_uid] ?? 0) + (b.ending_bb - b.buy_in_bb);
+        (sums[b.player_uid] ?? 0) + deltaOf(b);
     });
     const rows: RankRow[] = Object.entries(sums)
       .map(([uid, total]) => ({
@@ -76,7 +78,7 @@ export default function RankingTable({
         <tr>
           <th style={th}>順位</th>
           <th style={th}>表示名</th>
-          <th style={{ ...th, textAlign: "right" }}>累計BB</th>
+          <th style={{ ...th, textAlign: "right" }}>累計{unitLabel(reportUnit)}</th>
         </tr>
       </thead>
       <tbody>
@@ -129,7 +131,7 @@ export default function RankingTable({
                   }}
                 >
                   {(() => {
-                    const { text, color } = fmtDiff(r.total);
+                    const { text, color } = fmtDiff(r.total, reportUnit);
                     return <span style={{ color }}>{text}</span>;
                   })()}
                 </td>

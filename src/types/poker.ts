@@ -1,4 +1,5 @@
 export type GroupSettings = {
+  report_unit?: "bb" | "points";
   stakes_fixed: boolean;
   stakes_sb?: number | null;
   stakes_bb?: number | null;
@@ -33,9 +34,11 @@ export type BalanceDoc = {
   player_uid: string;
   date: string;
   date_ts: any; // Timestamp
-  stakes: string; // "SB/BB"
-  buy_in_bb: number;
-  ending_bb: number;
+  stakes: string; // "SB/BB" when report_unit is "bb"
+  buy_in?: number;
+  ending?: number;
+  buy_in_bb?: number; // Legacy field
+  ending_bb?: number; // Legacy field
   memo: string;
   last_updated: any; // Timestamp
   is_deleted: boolean;
