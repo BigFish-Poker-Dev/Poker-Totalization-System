@@ -37,13 +37,7 @@ git clone <repository-url>
 cd Poker-Totalization-System
 ```
 
-### 2. 依存関係のインストール
-
-```bash
-npm install
-```
-
-### 3. 環境変数の設定
+### 2. 環境変数の設定
 
 プロジェクトルートに `.env` ファイル（または `.env.local`）を作成し、Firebaseの設定を追加してください。
 
@@ -56,13 +50,52 @@ VITE_FB_MESSAGING_SENDER_ID=your_messaging_sender_id
 VITE_FB_APP_ID=your_app_id
 ```
 
-### 4. 開発サーバーの起動
+### 3. Dockerで起動する
+
+Docker Desktop を起動した状態で、次のコマンドを実行してください。
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml up -d --build
+docker compose -f .devcontainer/docker-compose.yml exec web npm ci
+docker compose -f .devcontainer/docker-compose.yml exec web npm run dev
+```
+
+ブラウザで `http://localhost:5173` にアクセスしてください。
+
+開発を終了するときは次を実行します。
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml down
+```
+
+依存関係は Docker volume の `node_modules` に保存されます。依存関係の権限や内容を作り直したい場合は、次のように volume ごと削除してから起動し直してください。
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml down -v
+docker compose -f .devcontainer/docker-compose.yml up -d --build
+docker compose -f .devcontainer/docker-compose.yml exec web npm ci
+```
+
+### 4. VS Code Dev Containersを使う場合
+
+VS Code の Dev Containers 拡張機能を使う場合は、コマンドパレットから `Dev Containers: Reopen in Container` を実行してください。コンテナ作成後、`postCreateCommand` により `npm ci` が実行されます。
+
+開発サーバーは、コンテナ内のターミナルで起動します。
 
 ```bash
 npm run dev
 ```
 
-ブラウザで `http://localhost:5173` (またはコンソールに表示されるURL) にアクセスしてください。
+### 5. Dockerを使わずローカルで起動する場合
+
+Node.js 20 と npm を利用できる環境で、次のコマンドを実行してください。
+
+```bash
+npm ci
+npm run dev
+```
+
+ブラウザで `http://localhost:5173` にアクセスしてください。
 
 ## ディレクトリ構造
 
