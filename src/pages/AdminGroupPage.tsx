@@ -22,7 +22,9 @@ import RankingTable from "../components/RankingTable";
 import BalanceDatabaseView from "../components/BalanceDatabaseView";
 import HistoryList from "../components/HistoryList";
 import GroupSettingsForm from "../components/GroupSettingsForm";
+import RankingTransitionGraph from "../components/RankingTransitionGraph";
 import { useBalanceFilter } from "../hooks/useBalanceFilter";
+import { ensureMissingRankingColors } from "../utils/playerColors";
 
 // ========== ページ本体 ==========
 export default function AdminGroupPage() {
@@ -59,7 +61,8 @@ export default function AdminGroupPage() {
       const plist = await getDocs(collection(db, "groups", groupId, "players"));
       const pmap: Record<string, PlayerDoc> = {};
       plist.docs.forEach((d) => (pmap[d.id] = d.data() as PlayerDoc));
-      setPlayers(pmap);
+      const coloredPlayers = await ensureMissingRankingColors(groupId, pmap);
+      setPlayers(coloredPlayers);
 
       // balances（ランキング用）
       const bq = query(
@@ -164,6 +167,12 @@ export default function AdminGroupPage() {
               }}
             >
               <h3 style={{ marginTop: 0 }}>全員のランキング（累計BB）</h3>
+              <RankingTransitionGraph
+                balances={balances}
+                players={players}
+                title="全員のランキング推移"
+              />
+              <div style={{ height: 16 }} />
               {/* Use shared component */}
               <RankingTable balances={balances} players={players} />
             </div>

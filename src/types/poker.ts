@@ -23,6 +23,7 @@ export type PlayerDoc = {
   display_name: string;
   email: string;
   total_balance: number;
+  ranking_color?: string;
 };
 
 export type BalanceDoc = {

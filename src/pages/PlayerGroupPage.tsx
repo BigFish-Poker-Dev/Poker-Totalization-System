@@ -17,12 +17,12 @@ import type {
   GroupDoc,
   PlayerDoc,
 } from "../types/poker";
+import { fmtDiff, getFixedStakes, pad6, randDigits } from "../utils/poker";
 import {
-  fmtDiff,
-  getFixedStakes,
-  pad6,
-  randDigits,
-} from "../utils/poker";
+  ensureMissingRankingColors,
+  generateUniqueRankingColor,
+  normalizeColor,
+} from "../utils/playerColors";
 import TabButton from "../components/TabButton";
 import RankingTable from "../components/RankingTable";
 import BalanceDatabaseView from "../components/BalanceDatabaseView";
@@ -30,6 +30,7 @@ import BalanceCalendarView from "../components/BalanceCalendarView";
 import BalanceGraphView from "../components/BalanceGraphView";
 import BalanceFormModal from "../components/BalanceFormModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import RankingTransitionGraph from "../components/RankingTransitionGraph";
 import { usePlayerActions } from "../hooks/usePlayerActions";
 import {
   INITIAL_FILTER_STATE,
@@ -57,7 +58,7 @@ export default function PlayerGroupPage() {
   const [openReport, setOpenReport] = useState(false);
   // Default values for report modal
   const [defReportDate, setDefReportDate] = useState(() =>
-    new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 10),
   );
   // Optional: preserve last entered stakes if not fixed?
   // User logic: "staksSB" / "stakesBB" were state.
@@ -105,6 +106,15 @@ export default function PlayerGroupPage() {
           display_name: fixedName,
           email: user.email ?? "",
           total_balance: 0,
+          ranking_color: generateUniqueRankingColor(
+            new Set(
+              (await getDocs(collection(db, "groups", groupId, "players"))).docs
+                .map((d) =>
+                  normalizeColor((d.data() as PlayerDoc).ranking_color ?? ""),
+                )
+                .filter(Boolean),
+            ),
+          ),
         };
         await setDoc(pref, pdoc);
         setMe(pdoc);
@@ -117,22 +127,22 @@ export default function PlayerGroupPage() {
         collection(db, "groups", groupId, "balances"),
         where("player_uid", "==", user.uid),
         where("is_deleted", "==", false),
-        orderBy("date_ts", "desc")
+        orderBy("date_ts", "desc"),
       );
       const b1 = await getDocs(q1);
       setMyBalances(
-        b1.docs.map((d) => ({ __id: d.id, ...(d.data() as BalanceDoc) }))
+        b1.docs.map((d) => ({ __id: d.id, ...(d.data() as BalanceDoc) })),
       );
 
       // 4) 全員の balances（ランキング用）
       const q2 = query(
         collection(db, "groups", groupId, "balances"),
         where("is_deleted", "==", false),
-        orderBy("date_ts", "desc")
+        orderBy("date_ts", "desc"),
       );
       const b2 = await getDocs(q2);
       setAllBalances(
-        b2.docs.map((d) => ({ __id: d.id, ...(d.data() as BalanceDoc) }))
+        b2.docs.map((d) => ({ __id: d.id, ...(d.data() as BalanceDoc) })),
       );
 
       // 5) players 一覧（uid -> PlayerDoc）
@@ -141,7 +151,9 @@ export default function PlayerGroupPage() {
       plist.docs.forEach((d) => {
         pmap[d.id] = d.data() as PlayerDoc;
       });
-      setPlayersMap(pmap);
+      const coloredPlayers = await ensureMissingRankingColors(groupId, pmap);
+      setPlayersMap(coloredPlayers);
+      if (coloredPlayers[user.uid]) setMe(coloredPlayers[user.uid]);
     })();
   }, [groupId, user]);
 
@@ -151,9 +163,9 @@ export default function PlayerGroupPage() {
     () =>
       [...myBalances].sort(
         (a, b) =>
-          (b.date_ts?.toMillis?.() ?? 0) - (a.date_ts?.toMillis?.() ?? 0)
+          (b.date_ts?.toMillis?.() ?? 0) - (a.date_ts?.toMillis?.() ?? 0),
       ),
-    [myBalances]
+    [myBalances],
   );
 
   const balanceHook = useBalanceFilter(myBalances as BalanceRow[]);
@@ -308,7 +320,6 @@ export default function PlayerGroupPage() {
                 <br />
                 差分 = 終了BB - バイインBB を累計に反映します。
               </div>
-              
             </div>
           )}
 
@@ -433,13 +444,24 @@ export default function PlayerGroupPage() {
                 padding: 12,
               }}
             >
-              <h3 style={{ marginTop: 0 }}>上位ランキング (Top {group!.settings?.ranking_top_n ?? 10})</h3>
+              <h3 style={{ marginTop: 0 }}>
+                上位ランキング (Top {group!.settings?.ranking_top_n ?? 10})
+              </h3>
               <RankingTable
                 balances={allBalances}
                 players={playersMap}
                 topN={group!.settings?.ranking_top_n ?? 10}
                 myPlayerUid={user?.uid}
               />
+              <RankingTransitionGraph
+                balances={allBalances}
+                players={playersMap}
+                rankLimit={group!.settings?.ranking_top_n ?? 10}
+                title={`上位ランキング推移 (Top ${
+                  group!.settings?.ranking_top_n ?? 10
+                })`}
+              />
+              <div style={{ height: 16 }} />
             </div>
           )}
         </div>
