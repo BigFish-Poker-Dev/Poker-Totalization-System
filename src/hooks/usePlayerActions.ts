@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { buyInOf, deltaOf, endingOf, getReportUnit, randDigits } from "../utils/poker";
+import { deltaInUnit, getReportUnit, randDigits } from "../utils/poker";
 import type {
   BalanceDoc,
   BalanceRow,
@@ -86,6 +86,7 @@ export function usePlayerActions({
         date: date,
         date_ts: Timestamp.fromDate(new Date(date + "T00:00:00")),
         stakes: reportUnit === "bb" ? stakesStr : "",
+        report_unit: reportUnit,
         buy_in: buyIn,
         ending: ending,
         memo: memo || "",
@@ -107,7 +108,7 @@ export function usePlayerActions({
       setAllBalances((prev) => [row, ...prev]);
 
       // Update total balance (simple calculation)
-      const delta = ending - buyIn;
+      const delta = deltaInUnit(balance, reportUnit, group);
       await updateDoc(doc(db, "groups", groupId, "players", user.uid), {
         total_balance: (me.total_balance ?? 0) + delta,
       });
@@ -148,15 +149,17 @@ export function usePlayerActions({
 
     try {
       const { date, sb, bb, buyIn, ending, memo } = data;
+      const reportUnit = getReportUnit(group);
       const ref = doc(db, "groups", groupId, "balances", menuTarget.__id);
 
       const before = { ...menuTarget };
-      const deltaBefore = deltaOf(menuTarget);
+      const deltaBefore = deltaInUnit(menuTarget, reportUnit, group);
 
       const patch = {
         date,
         date_ts: Timestamp.fromDate(new Date(date + "T00:00:00")),
-        stakes: getReportUnit(group) === "bb" ? `${sb}/${bb}` : "",
+        stakes: reportUnit === "bb" ? `${sb}/${bb}` : "",
+        report_unit: reportUnit,
         buy_in: buyIn,
         ending: ending,
         memo,
@@ -174,7 +177,7 @@ export function usePlayerActions({
       );
 
       // Update total balance (diff)
-      const deltaAfter = ending - buyIn;
+      const deltaAfter = deltaInUnit({ ...before, ...patch }, reportUnit, group);
       const deltaDiff = deltaAfter - deltaBefore;
       await updateDoc(doc(db, "groups", groupId, "players", user.uid), {
         total_balance: (me.total_balance ?? 0) + deltaDiff,
@@ -202,7 +205,7 @@ export function usePlayerActions({
 
   // Action: Delete
   const doDelete = async (menuTarget: BalanceRow) => {
-    if (!groupId || !user || !me || !menuTarget) return;
+    if (!groupId || !user || !me || !group || !menuTarget) return;
     setDeleting(true);
     try {
       const ref = doc(db, "groups", groupId, "balances", menuTarget.__id);
@@ -218,7 +221,8 @@ export function usePlayerActions({
       setAllBalances((prev) => prev.filter((x) => x.__id !== menuTarget.__id));
 
       // Revert total balance
-      const delta = endingOf(menuTarget) - buyInOf(menuTarget);
+      const reportUnit = getReportUnit(group);
+      const delta = deltaInUnit(menuTarget, reportUnit, group);
       await updateDoc(doc(db, "groups", groupId, "players", user.uid), {
         total_balance: (me.total_balance ?? 0) - delta,
       });

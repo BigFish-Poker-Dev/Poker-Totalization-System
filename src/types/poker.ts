@@ -35,6 +35,7 @@ export type BalanceDoc = {
   date: string;
   date_ts: any; // Timestamp
   stakes: string; // "SB/BB" when report_unit is "bb"
+  report_unit?: "bb" | "points";
   buy_in?: number;
   ending?: number;
   buy_in_bb?: number; // Legacy field

@@ -7,7 +7,15 @@ import {
   type BalanceItem,
 } from "../hooks/useBalanceFilter";
 import Modal from "./Modal";
-import { buyInOf, endingOf, fmtDiff, playerNameOf, type ReportUnit } from "../utils/poker";
+import {
+  buyInInUnit,
+  deltaInUnit,
+  endingInUnit,
+  fmtAmount,
+  fmtDiff,
+  playerNameOf,
+  type ReportUnit,
+} from "../utils/poker";
 
 type Props = {
   // Lifted state from useBalanceFilter
@@ -284,8 +292,7 @@ export default function BalanceDatabaseView({
           </thead>
           <tbody>
             {sortedBalances.map((b, idx) => {
-              const delta =
-                endingOf(b) - buyInOf(b);
+              const delta = deltaInUnit(b, reportUnit);
               const { text, color } = fmtDiff(delta, reportUnit);
               const name = playerNameOf(b.player_uid, players) || "(unknown)";
               const when = b.last_updated?.toDate?.() || b.date_ts?.toDate?.();
@@ -297,10 +304,10 @@ export default function BalanceDatabaseView({
                   <td style={td}>{b.date || "-"}</td>
                   <td style={td}>{b.stakes || "-"}</td>
                   <td style={{ ...td, textAlign: "right" }}>
-                    {String(buyInOf(b))}
+                    {fmtAmount(buyInInUnit(b, reportUnit))}
                   </td>
                   <td style={{ ...td, textAlign: "right" }}>
-                    {String(endingOf(b))}
+                    {fmtAmount(endingInUnit(b, reportUnit))}
                   </td>
                   <td
                     style={{

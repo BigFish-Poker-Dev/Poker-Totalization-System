@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import type { BalanceDoc, BalanceRow } from "../types/poker";
 import {
-  buyInOf,
-  deltaOf,
-  endingOf,
+  buyInInUnit,
+  deltaInUnit,
+  endingInUnit,
+  type ReportUnit,
   toMs,
   toMsDateOnly,
   toMsDateOnlyEnd,
@@ -57,7 +58,8 @@ export type SortDir = "asc" | "desc";
 export function useBalanceFilter(
   balances: BalanceItem[],
   initialSortKey: SortKey = "last_updated",
-  initialSortDir: SortDir = "desc"
+  initialSortDir: SortDir = "desc",
+  reportUnit: ReportUnit = "bb"
 ) {
   const [filterState, setFilterState] =
     useState<BalanceFilterState>(INITIAL_FILTER_STATE);
@@ -117,9 +119,9 @@ export function useBalanceFilter(
       )
         return false;
       // 数値系
-      const bi = buyInOf(b);
-      const en = endingOf(b);
-      const de = deltaOf(b);
+      const bi = buyInInUnit(b, reportUnit);
+      const en = endingInUnit(b, reportUnit);
+      const de = deltaInUnit(b, reportUnit);
       if (!isNaN(biMin) && !(bi >= biMin)) return false;
       if (!isNaN(biMax) && !(bi <= biMax)) return false;
       if (!isNaN(enMin) && !(en >= enMin)) return false;
@@ -138,7 +140,7 @@ export function useBalanceFilter(
 
       return true;
     });
-  }, [balances, filterState]);
+  }, [balances, filterState, reportUnit]);
 
   const sortedBalances = useMemo(() => {
     const arr = [...filteredBalances];
@@ -152,11 +154,11 @@ export function useBalanceFilter(
             (b.date ? new Date(b.date).setHours(0, 0, 0, 0) : 0)
           );
         case "buy_in_bb":
-          return buyInOf(b);
+          return buyInInUnit(b, reportUnit);
         case "ending_bb":
-          return endingOf(b);
+          return endingInUnit(b, reportUnit);
         case "delta":
-          return deltaOf(b);
+          return deltaInUnit(b, reportUnit);
         default:
           return 0;
       }
@@ -167,7 +169,7 @@ export function useBalanceFilter(
       return sortDir === "asc" ? va - vb : vb - va;
     });
     return arr;
-  }, [filteredBalances, sortKey, sortDir]);
+  }, [filteredBalances, sortKey, sortDir, reportUnit]);
 
   const toggleSort = (k: SortKey) => {
     let nextKey: SortKey = sortKey;
@@ -184,8 +186,8 @@ export function useBalanceFilter(
   };
 
   const totalDelta = useMemo(
-    () => sortedBalances.reduce((sum, b) => sum + deltaOf(b), 0),
-    [sortedBalances]
+    () => sortedBalances.reduce((sum, b) => sum + deltaInUnit(b, reportUnit), 0),
+    [sortedBalances, reportUnit]
   );
 
   return {

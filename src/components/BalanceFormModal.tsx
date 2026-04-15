@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import Modal from "./Modal";
 import {
-  buyInOf,
-  endingOf,
+  buyInInUnit,
+  endingInUnit,
+  fmtAmount,
   getFixedStakes,
   getReportUnit,
   parseLegacyStakes,
@@ -77,8 +78,8 @@ export default function BalanceFormModal({
       if (balance) {
         // Edit Mode
         setDate(balance.date || "");
-        setBuyIn(String(buyInOf(balance)));
-        setEnding(String(endingOf(balance)));
+        setBuyIn(fmtAmount(buyInInUnit(balance, reportUnit, group)));
+        setEnding(fmtAmount(endingInUnit(balance, reportUnit, group)));
         setMemo(balance.memo || "");
 
         if (fixed) {

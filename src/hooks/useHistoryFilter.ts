@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import type { BalanceDoc, HistoryDoc, PlayerDoc } from "../types/poker";
-import { buyInOf, deltaOf, endingOf, toMs } from "../utils/poker";
+import {
+  buyInInUnit,
+  deltaInUnit,
+  endingInUnit,
+  toMs,
+  type ReportUnit,
+} from "../utils/poker";
 
 export type HSortKey = "changed_at" | "date" | "buy_in_bb" | "ending_bb" | "delta";
 export type HSortDir = "asc" | "desc";
@@ -66,7 +72,8 @@ export function expandHistory(h: HistoryDoc): HRow[] {
 
 export function useHistoryFilter(
   histories: HistoryDoc[],
-  _players: Record<string, PlayerDoc>
+  _players: Record<string, PlayerDoc>,
+  reportUnit: ReportUnit = "bb"
 ) {
   const [filter, setFilter] = useState<HistoryFilterState>(INITIAL_HISTORY_FILTER);
   const [sortKey, setSortKey] = useState<HSortKey>("changed_at");
@@ -129,17 +136,17 @@ export function useHistoryFilter(
         if (filter.stakes && (b.stakes || "").indexOf(filter.stakes) === -1)
           return false;
         // BuyIn
-        if (filter.buyInMin && buyInOf(b) < Number(filter.buyInMin))
+        if (filter.buyInMin && buyInInUnit(b, reportUnit) < Number(filter.buyInMin))
           return false;
-        if (filter.buyInMax && buyInOf(b) > Number(filter.buyInMax))
+        if (filter.buyInMax && buyInInUnit(b, reportUnit) > Number(filter.buyInMax))
           return false;
         // Ending
-        if (filter.endingMin && endingOf(b) < Number(filter.endingMin))
+        if (filter.endingMin && endingInUnit(b, reportUnit) < Number(filter.endingMin))
           return false;
-        if (filter.endingMax && endingOf(b) > Number(filter.endingMax))
+        if (filter.endingMax && endingInUnit(b, reportUnit) > Number(filter.endingMax))
           return false;
         
-        const delta = deltaOf(b);
+        const delta = deltaInUnit(b, reportUnit);
         if (filter.deltaMin && delta < Number(filter.deltaMin)) return false;
         if (filter.deltaMax && delta > Number(filter.deltaMax)) return false;
 
@@ -170,7 +177,7 @@ export function useHistoryFilter(
 
       return true;
     });
-  }, [histories, filter]);
+  }, [histories, filter, reportUnit]);
 
   // ソート
   const sortedHistories = useMemo(() => {
@@ -190,11 +197,11 @@ export function useHistoryFilter(
           return d ? new Date(d).setHours(0, 0, 0, 0) : 0;
         }
         case "buy_in_bb":
-          return rep ? buyInOf(rep) : 0;
+          return rep ? buyInInUnit(rep, reportUnit) : 0;
         case "ending_bb":
-          return rep ? endingOf(rep) : 0;
+          return rep ? endingInUnit(rep, reportUnit) : 0;
         case "delta":
-          return rep ? deltaOf(rep) : 0;
+          return rep ? deltaInUnit(rep, reportUnit) : 0;
         default:
           return 0;
       }
@@ -220,7 +227,7 @@ export function useHistoryFilter(
     );
 
     return flats;
-  }, [historiesFiltered, sortKey, sortDir]);
+  }, [historiesFiltered, sortKey, sortDir, reportUnit]);
 
   const toggleSort = (k: HSortKey) => {
     if (sortKey !== k) {

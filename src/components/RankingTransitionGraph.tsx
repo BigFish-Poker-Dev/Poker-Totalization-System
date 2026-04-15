@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BalanceDoc, PlayerDoc } from "../types/poker";
-import { deltaOf, unitLabel, type ReportUnit } from "../utils/poker";
+import { deltaInUnit, unitLabel, type ReportUnit } from "../utils/poker";
 import { playerRankingColor } from "../utils/playerColors";
 
 type Props = {
@@ -93,7 +93,7 @@ export default function RankingTransitionGraph({
       const byPlayer = dailyDeltaByDate.get(balance.date) ?? new Map();
       byPlayer.set(
         balance.player_uid,
-        (byPlayer.get(balance.player_uid) ?? 0) + deltaOf(balance),
+        (byPlayer.get(balance.player_uid) ?? 0) + deltaInUnit(balance, reportUnit),
       );
       dailyDeltaByDate.set(balance.date, byPlayer);
     });
@@ -200,7 +200,7 @@ export default function RankingTransitionGraph({
       ranksByDate,
       xTicks,
     };
-  }, [balances, players, rankLimit]);
+  }, [balances, players, rankLimit, reportUnit]);
 
   const hoveredRanks = hoverDate
     ? (graph.ranksByDate.get(hoverDate) ?? []).filter(

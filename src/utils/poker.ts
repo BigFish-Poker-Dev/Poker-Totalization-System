@@ -59,6 +59,89 @@ export const deltaOf = (b: {
   buy_in_bb?: number;
 }) => endingOf(b) - buyInOf(b);
 
+type BalanceUnitSource = {
+  report_unit?: ReportUnit;
+  stakes?: string;
+  buy_in?: number;
+  ending?: number;
+  buy_in_bb?: number;
+  ending_bb?: number;
+};
+
+const amountInUnit = (
+  value: number,
+  fromUnit: ReportUnit,
+  toUnit: ReportUnit,
+  bbStake: number
+) => {
+  if (fromUnit === toUnit) return value;
+  if (fromUnit === "bb" && toUnit === "points") return value * bbStake;
+  return value / bbStake;
+};
+
+export const balanceReportUnitOf = (
+  b: BalanceUnitSource,
+  fallbackUnit: ReportUnit = "bb"
+): ReportUnit => {
+  if (b.report_unit === "points" || b.report_unit === "bb") return b.report_unit;
+  if (
+    b.buy_in_bb != null ||
+    b.ending_bb != null ||
+    (b.stakes && b.stakes.trim() !== "")
+  ) {
+    return "bb";
+  }
+  return fallbackUnit;
+};
+
+export const stakeBbOf = (
+  b: Pick<BalanceUnitSource, "stakes">,
+  group?: GroupDoc | null
+) => {
+  const balanceStake = parseLegacyStakes(b.stakes);
+  if (balanceStake.bb != null && balanceStake.bb > 0) return balanceStake.bb;
+  const settings = group?.settings;
+  if (typeof settings?.stakes_bb === "number" && settings.stakes_bb > 0) {
+    return settings.stakes_bb;
+  }
+  const groupStake = parseLegacyStakes(settings?.stakes_value);
+  if (groupStake.bb != null && groupStake.bb > 0) return groupStake.bb;
+  return 1;
+};
+
+export const buyInInUnit = (
+  b: BalanceUnitSource,
+  displayUnit: ReportUnit = "bb",
+  group?: GroupDoc | null
+) =>
+  amountInUnit(
+    buyInOf(b),
+    balanceReportUnitOf(b, displayUnit),
+    displayUnit,
+    stakeBbOf(b, group)
+  );
+
+export const endingInUnit = (
+  b: BalanceUnitSource,
+  displayUnit: ReportUnit = "bb",
+  group?: GroupDoc | null
+) =>
+  amountInUnit(
+    endingOf(b),
+    balanceReportUnitOf(b, displayUnit),
+    displayUnit,
+    stakeBbOf(b, group)
+  );
+
+export const deltaInUnit = (
+  b: BalanceUnitSource,
+  displayUnit: ReportUnit = "bb",
+  group?: GroupDoc | null
+) => endingInUnit(b, displayUnit, group) - buyInInUnit(b, displayUnit, group);
+
+export const fmtAmount = (v: number) =>
+  Number.isInteger(v) ? String(v) : v.toFixed(1);
+
 export const playerNameOf = (uid?: string, players?: Record<string, PlayerDoc>) => {
   if (!uid) return "";
   return players?.[uid]?.display_name ?? "";

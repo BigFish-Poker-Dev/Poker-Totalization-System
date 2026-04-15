@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { BalanceRow } from "../types/poker";
-import { deltaOf, fmtDiff, type ReportUnit } from "../utils/poker";
+import { deltaInUnit, fmtDiff, type ReportUnit } from "../utils/poker";
 
 type Props = {
   balances: BalanceRow[];
@@ -52,8 +52,8 @@ export default function BalanceCalendarView({
 
   // 月間合計
   const totalDelta = useMemo(
-    () => monthBalances.reduce((a, b) => a + deltaOf(b), 0),
-    [monthBalances]
+    () => monthBalances.reduce((a, b) => a + deltaInUnit(b, reportUnit), 0),
+    [monthBalances, reportUnit]
   );
 
   return (
@@ -140,7 +140,7 @@ export default function BalanceCalendarView({
             : [];
           // 日次集計
           const dayDelta = dayBalances.reduce(
-            (a, b) => a + deltaOf(b),
+            (a, b) => a + deltaInUnit(b, reportUnit),
             0
           );
           const hasData = dayBalances.length > 0;

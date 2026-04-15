@@ -22,9 +22,7 @@ import type {
   PlayerDoc,
 } from "../types/poker";
 import {
-  buyInOf,
-  deltaOf,
-  endingOf,
+  deltaInUnit,
   getReportUnit,
   creatorNameOf,
   pad6,
@@ -104,7 +102,8 @@ export default function AdminGroupPage() {
     })();
   }, [groupId]);
 
-  const balanceHook = useBalanceFilter(balances);
+  const reportUnit = getReportUnit(group);
+  const balanceHook = useBalanceFilter(balances, "last_updated", "desc", reportUnit);
 
   const saveAdminEdit = async (
     target: BalanceRow,
@@ -120,18 +119,20 @@ export default function AdminGroupPage() {
     if (!groupId || !group) return;
 
     const before = { ...target };
-    const deltaBefore = deltaOf(target);
-    const deltaAfter = data.ending - data.buyIn;
-    const deltaDiff = deltaAfter - deltaBefore;
+    const reportUnit = getReportUnit(group);
+    const deltaBefore = deltaInUnit(target, reportUnit, group);
     const patch = {
       date: data.date,
       date_ts: Timestamp.fromDate(new Date(data.date + "T00:00:00")),
-      stakes: getReportUnit(group) === "bb" ? `${data.sb}/${data.bb}` : "",
+      stakes: reportUnit === "bb" ? `${data.sb}/${data.bb}` : "",
+      report_unit: reportUnit,
       buy_in: data.buyIn,
       ending: data.ending,
       memo: data.memo,
       last_updated: serverTimestamp(),
     };
+    const deltaAfter = deltaInUnit({ ...before, ...patch }, reportUnit, group);
+    const deltaDiff = deltaAfter - deltaBefore;
     const history: HistoryDoc = {
       history_id: parseInt(randDigits(9), 10),
       balance_id: target.balance_id,
@@ -185,11 +186,12 @@ export default function AdminGroupPage() {
   };
 
   const deleteAdminBalance = async () => {
-    if (!groupId || !menuTarget) return;
+    if (!groupId || !group || !menuTarget) return;
     setDeleting(true);
     try {
       const before = { ...menuTarget };
-      const delta = endingOf(menuTarget) - buyInOf(menuTarget);
+      const reportUnit = getReportUnit(group);
+      const delta = deltaInUnit(menuTarget, reportUnit, group);
       const history: HistoryDoc = {
         history_id: parseInt(randDigits(9), 10),
         balance_id: menuTarget.balance_id,
@@ -250,7 +252,6 @@ export default function AdminGroupPage() {
 
 
   if (!group) return <div style={{ padding: 24 }}>Loading...</div>;
-  const reportUnit = getReportUnit(group);
 
 
   return (
