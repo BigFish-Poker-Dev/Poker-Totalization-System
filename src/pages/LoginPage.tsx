@@ -6,6 +6,30 @@ import { auth, db } from "../lib/firebase";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
+const releaseNotes = [
+  {
+    date: "2026/04/15",
+    title: "収支の単位切り替えに対応",
+    items: [
+      "グループごとにBB数・点数のどちらで報告するかを選べるようになりました。",
+      "BB数で記録された過去データは、ステークスを使って点数に換算されます。",
+    ],
+  },
+  {
+    date: "2026/04/15",
+    title: "ランキング推移グラフを追加",
+    items: [
+      "プレイヤー画面で上位ランキングの推移を確認できるようになりました。",
+      "Admin画面では全プレイヤーのランキング推移を確認できます。",
+    ],
+  },
+  {
+    date: "2026/04/15",
+    title: "収支推移グラフを追加",
+    items: ["プレイヤー画面で収支の推移をグラフで確認できるようになりました。"],
+  },
+];
+
 export default function LoginPage() {
   const [openRegister, setOpenRegister] = useState(false);
   const [registering, setRegistering] = useState(false);
@@ -92,6 +116,64 @@ export default function LoginPage() {
           // 成功後の遷移は onSuccess 内で実施（初回登録/既存で分岐）
           onSuccess={handleLoginSuccess}
         />
+
+        <section
+          style={{
+            marginTop: 28,
+            paddingTop: 20,
+            borderTop: "1px solid #eee",
+            textAlign: "left",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              gap: 12,
+              marginBottom: 12,
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: 18 }}>リリースノート</h2>
+            <span style={{ fontSize: 12, color: "#777", whiteSpace: "nowrap" }}>
+              最新情報
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gap: 16 }}>
+            {releaseNotes.map((note) => (
+              <article key={`${note.date}-${note.title}`}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "baseline",
+                    flexWrap: "wrap",
+                    marginBottom: 6,
+                  }}
+                >
+                  <time style={{ fontSize: 12, color: "#777" }}>
+                    {note.date}
+                  </time>
+                  <h3 style={{ margin: 0, fontSize: 14 }}>{note.title}</h3>
+                </div>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: 18,
+                    color: "#555",
+                    fontSize: 13,
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {note.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
 
       {/* 初回ユーザー登録モーダル */}
