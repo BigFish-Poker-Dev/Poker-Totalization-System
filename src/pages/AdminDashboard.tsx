@@ -25,6 +25,7 @@ type GroupDoc = {
   creator: string;
   player_password: string;
   admin_password: string;
+  balance_summary_status?: "OnGoing" | "Archive";
   created_at?: any;
   last_updated?: any;
   creator_name?: string;
@@ -172,6 +173,7 @@ export default function AdminDashboard() {
               creator_uid: user.uid,
               player_password: playerPw,
               admin_password: adminPw,
+              balance_summary_status: "OnGoing",
               created_at: serverTimestamp(),
               last_updated: serverTimestamp(),
             };
