@@ -13,6 +13,7 @@ export type GroupDoc = {
   creator: string;
   player_password: string;
   admin_password: string;
+  balance_summary_status?: "OnGoing" | "Archive";
   settings?: GroupSettings;
   creator_name?: string;
   creator_uid?: string;
