@@ -8,6 +8,23 @@ import { useNavigate } from "react-router-dom";
 
 const releaseNotes = [
   {
+    date: "2026/05/27",
+    title: "グループ設定画面と集計状態表示を改善",
+    items: [
+      "Adminのグループ設定画面を、閲覧専用表示＋編集モーダル形式に刷新しました。",
+      "Player/Admin のグループページで、OnGoing / Archive の状態が確認できるようになりました。",
+      "Archive のグループでは、Player 画面の収支報告を非表示にし、収支確認を初期表示に変更しました。",
+    ],
+  },
+  {
+    date: "2026/05/27",
+    title: "Player画面の収支確認を見やすく調整",
+    items: [
+      "収支確認の表示順を グラフ / カレンダー / データベース に変更しました。",
+      "収支確認を開いたときの初期表示をグラフに変更しました。",
+    ],
+  },
+  {
     date: "2026/04/15",
     title: "収支の単位切り替えに対応",
     items: [
@@ -36,7 +53,16 @@ export default function LoginPage() {
   const [displayName, setDisplayName] = useState("");
   const [pendingUid, setPendingUid] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [showPastReleaseNotes, setShowPastReleaseNotes] = useState(false);
   const navigate = useNavigate();
+
+  const latestReleaseDate = releaseNotes[0]?.date ?? "";
+  const latestReleaseNotes = releaseNotes.filter(
+    (note) => note.date === latestReleaseDate,
+  );
+  const pastReleaseNotes = releaseNotes.filter(
+    (note) => note.date !== latestReleaseDate,
+  );
 
   // Google ログイン成功後：/users/{uid} の有無で分岐
   const handleLoginSuccess = async () => {
@@ -141,7 +167,7 @@ export default function LoginPage() {
           </div>
 
           <div style={{ display: "grid", gap: 16 }}>
-            {releaseNotes.map((note) => (
+            {latestReleaseNotes.map((note) => (
               <article key={`${note.date}-${note.title}`}>
                 <div
                   style={{
@@ -172,6 +198,65 @@ export default function LoginPage() {
                 </ul>
               </article>
             ))}
+
+            {pastReleaseNotes.length > 0 && (
+              <div style={{ display: "grid", gap: 12 }}>
+                <button
+                  onClick={() => setShowPastReleaseNotes((prev) => !prev)}
+                  style={{
+                    justifySelf: "start",
+                    padding: "8px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    background: "#fff",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  {showPastReleaseNotes
+                    ? "過去のリリースノートを閉じる"
+                    : "過去のリリースノートを表示"}
+                </button>
+
+                {showPastReleaseNotes && (
+                  <div style={{ display: "grid", gap: 16 }}>
+                    {pastReleaseNotes.map((note) => (
+                      <article key={`${note.date}-${note.title}`}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "baseline",
+                            flexWrap: "wrap",
+                            marginBottom: 6,
+                          }}
+                        >
+                          <time style={{ fontSize: 12, color: "#777" }}>
+                            {note.date}
+                          </time>
+                          <h3 style={{ margin: 0, fontSize: 14 }}>
+                            {note.title}
+                          </h3>
+                        </div>
+                        <ul
+                          style={{
+                            margin: 0,
+                            paddingLeft: 18,
+                            color: "#555",
+                            fontSize: 13,
+                            lineHeight: 1.7,
+                          }}
+                        >
+                          {note.items.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>

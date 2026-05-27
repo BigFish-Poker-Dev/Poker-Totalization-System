@@ -45,6 +45,8 @@ import {
   useBalanceFilter,
 } from "../hooks/useBalanceFilter";
 
+type PlayerTab = "収支報告" | "収支確認" | "上位ランキング";
+
 export default function PlayerGroupPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const user = auth.currentUser;
@@ -54,8 +56,7 @@ export default function PlayerGroupPage() {
   const [me, setMe] = useState<PlayerDoc | null>(null);
 
   // --- タブ ---
-  const TABS = ["収支報告", "収支確認", "上位ランキング"] as const;
-  const [tab, setTab] = useState<(typeof TABS)[number]>("収支報告");
+  const [tab, setTab] = useState<PlayerTab>("収支報告");
 
   // --- balances / players ---
   const [myBalances, setMyBalances] = useState<BalanceRow[]>([]);
@@ -77,7 +78,7 @@ export default function PlayerGroupPage() {
   // --- 収支確認（ビュー切替・カレンダー） ---
   const [confirmView, setConfirmView] = useState<
     "calendar" | "graph" | "table"
-  >("calendar");
+  >("graph");
 
   // --- 編集/削除（︙メニュー & モーダル）
   const [menuTarget, setMenuTarget] = useState<BalanceRow | null>(null);
@@ -177,6 +178,12 @@ export default function PlayerGroupPage() {
   );
 
   const reportUnit = getReportUnit(group);
+  const isArchived = group?.balance_summary_status === "Archive";
+  const tabs: PlayerTab[] = isArchived
+    ? ["収支確認", "上位ランキング"]
+    : ["収支報告", "収支確認", "上位ランキング"];
+  const activeTab: PlayerTab =
+    isArchived && tab === "収支報告" ? "収支確認" : tab;
   const balanceHook = useBalanceFilter(
     myBalances as BalanceRow[],
     "last_updated",
@@ -217,6 +224,12 @@ export default function PlayerGroupPage() {
     },
   });
 
+  useEffect(() => {
+    if (isArchived && tab === "収支報告") {
+      setTab("収支確認");
+    }
+  }, [isArchived, tab]);
+
   // -------------- 表示 --------------
   if (!group || !me) {
     return <div style={{ padding: 24 }}>Loading...</div>;
@@ -224,6 +237,7 @@ export default function PlayerGroupPage() {
 
   const fixed = getFixedStakes(group);
   const labelUnit = unitLabel(reportUnit);
+  const summaryStatus = group.balance_summary_status ?? "OnGoing";
 
   function openReportModal() {
     if (fixed) {
@@ -265,6 +279,27 @@ export default function PlayerGroupPage() {
               <span style={{ opacity: 0.6, fontSize: 14 }}>
                 ID {pad6(group.group_id)}
               </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  marginLeft: 10,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  verticalAlign: "middle",
+                  color: summaryStatus === "Archive" ? "#9a3412" : "#166534",
+                  background:
+                    summaryStatus === "Archive" ? "#ffedd5" : "#dcfce7",
+                  border:
+                    summaryStatus === "Archive"
+                      ? "1px solid #fdba74"
+                      : "1px solid #86efac",
+                }}
+              >
+                {summaryStatus}
+              </span>
             </h2>
             <div style={{ opacity: 0.7, fontSize: 13 }}>
               Player: <strong>{me.display_name}</strong>（{me.email || "-"}） /
@@ -295,8 +330,8 @@ export default function PlayerGroupPage() {
         <hr style={{ margin: "16px 0 12px" }} />
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {TABS.map((t) => (
-            <TabButton key={t} active={tab === t} onClick={() => setTab(t)}>
+          {tabs.map((t) => (
+            <TabButton key={t} active={activeTab === t} onClick={() => setTab(t)}>
               {t}
             </TabButton>
           ))}
@@ -304,7 +339,7 @@ export default function PlayerGroupPage() {
 
         <div style={{ marginTop: 16 }}>
           {/* ========== 収支報告 ========== */}
-          {tab === "収支報告" && (
+          {activeTab === "収支報告" && (
             <div
               style={{
                 display: "grid",
@@ -352,7 +387,7 @@ export default function PlayerGroupPage() {
           )}
 
           {/* ========== 収支確認 ========== */}
-          {tab === "収支確認" && (
+          {activeTab === "収支確認" && (
             <div>
               <div
                 style={{
@@ -371,25 +406,6 @@ export default function PlayerGroupPage() {
                   }}
                 >
                   <button
-                    onClick={() => setConfirmView("calendar")}
-                    style={{
-                      border: "none",
-                      background:
-                        confirmView === "calendar" ? "#fff" : "transparent",
-                      borderRadius: 999,
-                      padding: "6px 16px",
-                      fontSize: 14,
-                      fontWeight: confirmView === "calendar" ? 700 : 500,
-                      cursor: "pointer",
-                      boxShadow:
-                        confirmView === "calendar"
-                          ? "0 2px 5px rgba(0,0,0,0.05)"
-                          : "none",
-                    }}
-                  >
-                    カレンダー
-                  </button>
-                  <button
                     onClick={() => setConfirmView("graph")}
                     style={{
                       border: "none",
@@ -407,6 +423,25 @@ export default function PlayerGroupPage() {
                     }}
                   >
                     グラフ
+                  </button>
+                  <button
+                    onClick={() => setConfirmView("calendar")}
+                    style={{
+                      border: "none",
+                      background:
+                        confirmView === "calendar" ? "#fff" : "transparent",
+                      borderRadius: 999,
+                      padding: "6px 16px",
+                      fontSize: 14,
+                      fontWeight: confirmView === "calendar" ? 700 : 500,
+                      cursor: "pointer",
+                      boxShadow:
+                        confirmView === "calendar"
+                          ? "0 2px 5px rgba(0,0,0,0.05)"
+                          : "none",
+                    }}
+                  >
+                    カレンダー
                   </button>
                   <button
                     onClick={() => setConfirmView("table")}
@@ -430,6 +465,13 @@ export default function PlayerGroupPage() {
                 </div>
               </div>
 
+              {confirmView === "graph" && (
+                <BalanceGraphView
+                  balances={myBalancesSorted}
+                  reportUnit={reportUnit}
+                />
+              )}
+
               {confirmView === "calendar" && (
                 <BalanceCalendarView
                   balances={myBalancesSorted}
@@ -442,13 +484,6 @@ export default function PlayerGroupPage() {
                     });
                     setConfirmView("table");
                   }}
-                />
-              )}
-
-              {confirmView === "graph" && (
-                <BalanceGraphView
-                  balances={myBalancesSorted}
-                  reportUnit={reportUnit}
                 />
               )}
 
@@ -469,7 +504,7 @@ export default function PlayerGroupPage() {
           )}
 
           {/* ========== 上位ランキング ========== */}
-          {tab === "上位ランキング" && (
+          {activeTab === "上位ランキング" && (
             <div
               style={{
                 border: "1px solid #eee",

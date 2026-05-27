@@ -253,6 +253,7 @@ export default function AdminGroupPage() {
 
   if (!group) return <div style={{ padding: 24 }}>Loading...</div>;
 
+  const summaryStatus = group.balance_summary_status ?? "OnGoing";
 
   return (
     <div
@@ -286,6 +287,27 @@ export default function AdminGroupPage() {
               Admin: {group.group_name}{" "}
               <span style={{ opacity: 0.6, fontSize: 14 }}>
                 ID {pad6(group.group_id)}
+              </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  marginLeft: 10,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  verticalAlign: "middle",
+                  color: summaryStatus === "Archive" ? "#9a3412" : "#166534",
+                  background:
+                    summaryStatus === "Archive" ? "#ffedd5" : "#dcfce7",
+                  border:
+                    summaryStatus === "Archive"
+                      ? "1px solid #fdba74"
+                      : "1px solid #86efac",
+                }}
+              >
+                {summaryStatus}
               </span>
             </h2>
             <div style={{ opacity: 0.7, fontSize: 13 }}>
