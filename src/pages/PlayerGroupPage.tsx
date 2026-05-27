@@ -179,6 +179,15 @@ export default function PlayerGroupPage() {
 
   const reportUnit = getReportUnit(group);
   const isArchived = group?.balance_summary_status === "Archive";
+  const requestedTopN = group?.settings?.ranking_top_n ?? 10;
+  const participantCount = Math.max(
+    Object.keys(playersMap).length,
+    me ? 1 : 0,
+  );
+  const effectiveTopN =
+    participantCount > 0
+      ? Math.min(requestedTopN, participantCount)
+      : requestedTopN;
   const tabs: PlayerTab[] = isArchived
     ? ["収支確認", "上位ランキング"]
     : ["収支報告", "収支確認", "上位ランキング"];
@@ -513,22 +522,20 @@ export default function PlayerGroupPage() {
               }}
             >
               <h3 style={{ marginTop: 0 }}>
-                上位ランキング (Top {group!.settings?.ranking_top_n ?? 10})
+                上位ランキング (Top {effectiveTopN})
               </h3>
               <RankingTable
                 balances={allBalances}
                 players={playersMap}
-                topN={group!.settings?.ranking_top_n ?? 10}
+                topN={effectiveTopN}
                 myPlayerUid={user?.uid}
                 reportUnit={reportUnit}
               />
               <RankingTransitionGraph
                 balances={allBalances}
                 players={playersMap}
-                rankLimit={group!.settings?.ranking_top_n ?? 10}
-                title={`上位ランキング推移 (Top ${
-                  group!.settings?.ranking_top_n ?? 10
-                })`}
+                rankLimit={effectiveTopN}
+                title={`上位ランキング推移 (Top ${effectiveTopN})`}
                 reportUnit={reportUnit}
               />
               <div style={{ height: 16 }} />

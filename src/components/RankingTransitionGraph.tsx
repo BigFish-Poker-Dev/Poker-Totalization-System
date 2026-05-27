@@ -113,7 +113,10 @@ export default function RankingTransitionGraph({
       playerIds.map((uid) => [uid, []]),
     );
     const ranksByDate = new Map<string, RankPoint[]>();
-    const rankCount = Math.max(1, rankLimit ?? playerIds.length);
+    const rankCount = Math.max(
+      1,
+      Math.min(rankLimit ?? playerIds.length, playerIds.length),
+    );
 
     dates.forEach((date, dateIndex) => {
       const deltas = dailyDeltaByDate.get(date);
