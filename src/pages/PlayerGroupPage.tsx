@@ -270,6 +270,7 @@ export default function PlayerGroupPage() {
   const summaryStatus = group.balance_summary_status ?? "OnGoing";
 
   function openReportModal() {
+    if (isArchived) return;
     if (fixed) {
       // Logic handled via props or component internal
     }
@@ -536,10 +537,14 @@ export default function PlayerGroupPage() {
                   players={playersMap}
                   mode="player"
                   reportUnit={reportUnit}
-                  onAction={(b) => {
-                    setMenuTarget(b);
-                    setOpenEdit(true);
-                  }}
+                  onAction={
+                    isArchived
+                      ? undefined
+                      : (b) => {
+                          setMenuTarget(b);
+                          setOpenEdit(true);
+                        }
+                  }
                 />
               )}
             </div>
