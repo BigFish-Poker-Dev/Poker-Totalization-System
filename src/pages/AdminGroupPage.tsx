@@ -104,6 +104,7 @@ export default function AdminGroupPage() {
   }, [groupId]);
 
   const reportUnit = getReportUnit(group);
+  const isArchived = group?.balance_summary_status === "Archive";
   const balanceHook = useBalanceFilter(balances, "last_updated", "desc", reportUnit);
 
   const saveAdminEdit = async (
@@ -111,6 +112,10 @@ export default function AdminGroupPage() {
     data: BalanceFormData
   ) => {
     if (!groupId || !group) return;
+    if (group.balance_summary_status === "Archive") {
+      alert("Archive状態のグループでは収支を編集できません");
+      return;
+    }
 
     const before = { ...target };
     const reportUnit = getReportUnit(group);
@@ -183,6 +188,10 @@ export default function AdminGroupPage() {
 
   const deleteAdminBalance = async () => {
     if (!groupId || !group || !menuTarget) return;
+    if (group.balance_summary_status === "Archive") {
+      alert("Archive状態のグループでは収支を削除できません");
+      return;
+    }
     setDeleting(true);
     try {
       const before = { ...menuTarget };
@@ -373,10 +382,14 @@ export default function AdminGroupPage() {
               mode="admin"
               {...balanceHook}
               reportUnit={reportUnit}
-              onAction={(balance) => {
-                setMenuTarget(balance);
-                setOpenEdit(true);
-              }}
+              onAction={
+                isArchived
+                  ? undefined
+                  : (balance) => {
+                      setMenuTarget(balance);
+                      setOpenEdit(true);
+                    }
+              }
             />
           )}
 

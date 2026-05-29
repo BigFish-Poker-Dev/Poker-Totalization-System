@@ -25,6 +25,7 @@ type GroupDoc = {
   creator: string;
   player_password: string;
   admin_password: string;
+  balance_summary_status?: "OnGoing" | "Archive";
   created_at?: any;
   last_updated?: any;
   creator_name?: string;
@@ -114,6 +115,15 @@ export default function PlayerDashboard() {
           b.group_id - a.group_id
       );
   }, [memberships, groups]);
+
+  const ongoingGroups = useMemo(
+    () => myGroups.filter((g) => (g.balance_summary_status ?? "OnGoing") === "OnGoing"),
+    [myGroups]
+  );
+  const archivedGroups = useMemo(
+    () => myGroups.filter((g) => g.balance_summary_status === "Archive"),
+    [myGroups]
+  );
 
   // ========== 既存グループに参加（player用） ==========
   const joinGroupAsPlayer = async () => {
@@ -308,50 +318,19 @@ export default function PlayerDashboard() {
         ) : myGroups.length === 0 ? (
           <div style={{ opacity: 0.7 }}>参加済みグループはありません。</div>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {myGroups.map((g) => {
-              const gidStr = pad6(g.group_id);
-              return (
-                <div
-                  key={gidStr}
-                  style={{
-                    border: "1px solid #eee",
-                    borderRadius: 12,
-                    padding: 12,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{g.group_name}</div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        opacity: 0.7,
-                        display: "flex",
-                        gap: 12,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span>ID: {pad6(g.group_id)}</span>
-                      <span>最終更新: {formatTs(g.last_updated)}</span>
-                      <span>作成者: {creatorNameOf(g)}</span>
-                    </div>
-                  </div>
-                  <Link
-                    to={`/player/group/${gidStr}`}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 10,
-                      border: "1px solid #ddd",
-                    }}
-                  >
-                    このグループへ
-                  </Link>
-                </div>
-              );
-            })}
+          <div style={{ display: "grid", gap: 20 }}>
+            <GroupSection
+              title="OnGoing"
+              groups={ongoingGroups}
+              linkBase="/player/group"
+              linkLabel="このグループへ"
+            />
+            <GroupSection
+              title="Archive"
+              groups={archivedGroups}
+              linkBase="/player/group"
+              linkLabel="このグループへ"
+            />
           </div>
         )}
       </div>
@@ -501,5 +480,101 @@ export default function PlayerDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+function GroupSection({
+  title,
+  groups,
+  linkBase,
+  linkLabel,
+}: {
+  title: "OnGoing" | "Archive";
+  groups: GroupDoc[];
+  linkBase: string;
+  linkLabel: string;
+}) {
+  const statusStyle =
+    title === "Archive"
+      ? {
+          color: "#9a3412",
+          background: "#ffedd5",
+          border: "1px solid #fdba74",
+        }
+      : {
+          color: "#166534",
+          background: "#dcfce7",
+          border: "1px solid #86efac",
+        };
+
+  return (
+    <section style={{ display: "grid", gap: 8 }}>
+      <div>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "4px 10px",
+            borderRadius: 999,
+            fontSize: 12,
+            fontWeight: 700,
+            ...statusStyle,
+          }}
+        >
+          {title}
+        </span>
+      </div>
+      {groups.length === 0 ? (
+        <div style={{ opacity: 0.6, fontSize: 14 }}>
+          {title} のグループはありません。
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {groups.map((g) => {
+            const gidStr = pad6(g.group_id);
+            return (
+              <div
+                key={gidStr}
+                style={{
+                  border: "1px solid #eee",
+                  borderRadius: 12,
+                  padding: 12,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600 }}>{g.group_name}</div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      opacity: 0.7,
+                      display: "flex",
+                      gap: 12,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>ID: {pad6(g.group_id)}</span>
+                    <span>最終更新: {formatTs(g.last_updated)}</span>
+                    <span>作成者: {creatorNameOf(g)}</span>
+                  </div>
+                </div>
+                <Link
+                  to={`${linkBase}/${gidStr}`}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                  }}
+                >
+                  {linkLabel}
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

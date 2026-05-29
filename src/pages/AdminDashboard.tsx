@@ -131,6 +131,15 @@ export default function AdminDashboard() {
       );
   }, [memberships, groups]);
 
+  const ongoingGroups = useMemo(
+    () => myGroups.filter((g) => (g.balance_summary_status ?? "OnGoing") === "OnGoing"),
+    [myGroups]
+  );
+  const archivedGroups = useMemo(
+    () => myGroups.filter((g) => g.balance_summary_status === "Archive"),
+    [myGroups]
+  );
+
   // ========== 新規グループ作成 ==========
   const createGroup = async () => {
     if (!user) return;
@@ -384,53 +393,23 @@ export default function AdminDashboard() {
 
         <hr style={{ margin: "16px 0 12px" }} />
 
-        <h3 style={{ margin: "0 0 8px" }}>1. 参加済みグループ一覧</h3>
+        <h3 style={{ margin: "0 0 8px" }}>参加済みグループ一覧</h3>
         {loading ? (
           <div>Loading...</div>
         ) : myGroups.length === 0 ? (
           <div style={{ opacity: 0.7 }}>参加済みグループはありません。</div>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {myGroups.map((g) => (
-              <div
-                key={g.group_id}
-                style={{
-                  border: "1px solid #eee",
-                  borderRadius: 12,
-                  padding: 12,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 600 }}>{g.group_name}</div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      opacity: 0.7,
-                      display: "flex",
-                      gap: 12,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span>ID: {pad6(g.group_id)}</span>
-                    <span>最終更新: {formatTs(g.last_updated)}</span>
-                    <span>作成者: {creatorNameOf(g)}</span>
-                  </div>
-                </div>
-                <Link
-                  to={`/admin/group/${pad6(g.group_id)}`}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                  }}
-                >
-                  このグループのAdminへ
-                </Link>
-              </div>
-            ))}
+          <div style={{ display: "grid", gap: 20 }}>
+            <GroupSection
+              title="OnGoing"
+              groups={ongoingGroups}
+              linkLabel="このグループのAdminへ"
+            />
+            <GroupSection
+              title="Archive"
+              groups={archivedGroups}
+              linkLabel="このグループのAdminへ"
+            />
           </div>
         )}
       </div>
@@ -617,5 +596,96 @@ export default function AdminDashboard() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+function GroupSection({
+  title,
+  groups,
+  linkLabel,
+}: {
+  title: "OnGoing" | "Archive";
+  groups: GroupDoc[];
+  linkLabel: string;
+}) {
+  const statusStyle =
+    title === "Archive"
+      ? {
+          color: "#9a3412",
+          background: "#ffedd5",
+          border: "1px solid #fdba74",
+        }
+      : {
+          color: "#166534",
+          background: "#dcfce7",
+          border: "1px solid #86efac",
+        };
+
+  return (
+    <section style={{ display: "grid", gap: 8 }}>
+      <div>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "4px 10px",
+            borderRadius: 999,
+            fontSize: 12,
+            fontWeight: 700,
+            ...statusStyle,
+          }}
+        >
+          {title}
+        </span>
+      </div>
+      {groups.length === 0 ? (
+        <div style={{ opacity: 0.6, fontSize: 14 }}>
+          {title} のグループはありません。
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {groups.map((g) => (
+            <div
+              key={g.group_id}
+              style={{
+                border: "1px solid #eee",
+                borderRadius: 12,
+                padding: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600 }}>{g.group_name}</div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    opacity: 0.7,
+                    display: "flex",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span>ID: {pad6(g.group_id)}</span>
+                  <span>最終更新: {formatTs(g.last_updated)}</span>
+                  <span>作成者: {creatorNameOf(g)}</span>
+                </div>
+              </div>
+              <Link
+                to={`/admin/group/${pad6(g.group_id)}`}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                }}
+              >
+                {linkLabel}
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

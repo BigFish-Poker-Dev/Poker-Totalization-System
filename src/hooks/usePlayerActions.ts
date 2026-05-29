@@ -65,6 +65,10 @@ export function usePlayerActions({
   // Action: Submit Balance (Create)
   const submitBalance = async (data: BalanceFormData) => {
     if (!groupId || !user || !me || !group) return;
+    if (group.balance_summary_status === "Archive") {
+      alert("Archive状態のグループでは収支を登録できません");
+      return;
+    }
 
     const { date, sb, bb, buyIn, ending, startTime, endTime, memo } = data;
 
@@ -135,6 +139,10 @@ export function usePlayerActions({
     data: BalanceFormData
   ) => {
     if (!groupId || !user || !me || !menuTarget) return;
+    if (group?.balance_summary_status === "Archive") {
+      alert("Archive状態のグループでは収支を編集できません");
+      return;
+    }
 
     try {
       const { date, sb, bb, buyIn, ending, startTime, endTime, memo } = data;
@@ -197,6 +205,10 @@ export function usePlayerActions({
   // Action: Delete
   const doDelete = async (menuTarget: BalanceRow) => {
     if (!groupId || !user || !me || !group || !menuTarget) return;
+    if (group.balance_summary_status === "Archive") {
+      alert("Archive状態のグループでは収支を削除できません");
+      return;
+    }
     setDeleting(true);
     try {
       const ref = doc(db, "groups", groupId, "balances", menuTarget.__id);
