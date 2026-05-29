@@ -278,7 +278,9 @@ export default function BalanceDatabaseView({
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <SortHeader k="last_updated" label="最終更新" />
+              {mode === "admin" && (
+                <SortHeader k="last_updated" label="最終更新" />
+              )}
               {mode === "admin" && <th style={th}>プレイヤー</th>}
               <SortHeader k="date" label="日付" />
               <th style={th}>ステークス</th>
@@ -288,7 +290,7 @@ export default function BalanceDatabaseView({
               <SortHeader k="ending_bb" label="Ending" align="right" />
               <SortHeader k="delta" label="差分" align="right" />
               <th style={th}>メモ</th>
-              <th style={th}>ID</th>
+              {mode === "admin" && <th style={th}>ID</th>}
               {onAction && <th style={th}></th>}
             </tr>
           </thead>
@@ -301,7 +303,9 @@ export default function BalanceDatabaseView({
 
               return (
                 <tr key={(b as any).__id || idx}>
-                  <td style={td}>{when ? when.toLocaleString() : "-"}</td>
+                  {mode === "admin" && (
+                    <td style={td}>{when ? when.toLocaleString() : "-"}</td>
+                  )}
                   {mode === "admin" && <td style={td}>{name}</td>}
                   <td style={td}>{b.date || "-"}</td>
                   <td style={td}>{b.stakes || "-"}</td>
@@ -324,7 +328,7 @@ export default function BalanceDatabaseView({
                     {text}
                   </td>
                   <td style={td}>{b.memo || "-"}</td>
-                  <td style={td}>{b.balance_id}</td>
+                  {mode === "admin" && <td style={td}>{b.balance_id}</td>}
                   {onAction && (
                     <td style={{ ...td, textAlign: "right", width: 48 }}>
                       <button
