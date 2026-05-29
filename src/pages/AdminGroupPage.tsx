@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import type {
   BalanceDoc,
+  BalanceFormData,
   BalanceRow,
   GroupDoc,
   HistoryDoc,
@@ -107,14 +108,7 @@ export default function AdminGroupPage() {
 
   const saveAdminEdit = async (
     target: BalanceRow,
-    data: {
-      date: string;
-      sb: number;
-      bb: number;
-      buyIn: number;
-      ending: number;
-      memo: string;
-    }
+    data: BalanceFormData
   ) => {
     if (!groupId || !group) return;
 
@@ -128,6 +122,8 @@ export default function AdminGroupPage() {
       report_unit: reportUnit,
       buy_in: data.buyIn,
       ending: data.ending,
+      start_time: data.startTime || null,
+      end_time: data.endTime || null,
       memo: data.memo,
       last_updated: serverTimestamp(),
     };

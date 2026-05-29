@@ -263,6 +263,8 @@ export default function HistoryList({
               <SortBtn k="date" label="日付" />
             </th>
             <th style={th}>ステークス</th>
+            <th style={th}>開始時刻</th>
+            <th style={th}>終了時刻</th>
             <th style={{ ...th, textAlign: "right" }}>
               <SortBtn k="buy_in_bb" label="BuyIn" alignRight />
             </th>
@@ -338,6 +340,8 @@ export default function HistoryList({
                   </td>
                   <td style={td}>{r.b.date}</td>
                   <td style={td}>{r.b.stakes}</td>
+                  <td style={td}>{r.b.start_time || "-"}</td>
+                  <td style={td}>{r.b.end_time || "-"}</td>
                   <td style={{ ...td, textAlign: "right" }}>
                     {fmtAmount(buyInInUnit(r.b, reportUnit))}
                   </td>

@@ -142,6 +142,37 @@ export const deltaInUnit = (
 export const fmtAmount = (v: number) =>
   Number.isInteger(v) ? String(v) : v.toFixed(1);
 
+export const parseTimeToMinutes = (value?: string | null) => {
+  if (!value || !/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(":").map(Number);
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  return hours * 60 + minutes;
+};
+
+export const playedHoursOf = (b: {
+  start_time?: string | null;
+  end_time?: string | null;
+}) => {
+  const startMinutes = parseTimeToMinutes(b.start_time);
+  const endMinutes = parseTimeToMinutes(b.end_time);
+  if (startMinutes == null || endMinutes == null) return null;
+  if (startMinutes === endMinutes) return null;
+  const diffMinutes =
+    endMinutes > startMinutes
+      ? endMinutes - startMinutes
+      : endMinutes + 24 * 60 - startMinutes;
+  return diffMinutes / 60;
+};
+
 export const playerNameOf = (uid?: string, players?: Record<string, PlayerDoc>) => {
   if (!uid) return "";
   return players?.[uid]?.display_name ?? "";

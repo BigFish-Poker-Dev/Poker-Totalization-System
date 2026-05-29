@@ -21,6 +21,7 @@ import {
   deltaInUnit,
   fmtDiff,
   getFixedStakes,
+  playedHoursOf,
   getReportUnit,
   pad6,
   randDigits,
@@ -207,6 +208,26 @@ export default function PlayerGroupPage() {
       ),
     [myBalances, reportUnit, group],
   );
+  const displayedHourly = useMemo(() => {
+    const timedBalances = myBalances
+      .map((balance) => ({
+        delta: deltaInUnit(balance, reportUnit, group),
+        hours: playedHoursOf(balance),
+      }))
+      .filter(
+        (
+          item,
+        ): item is {
+          delta: number;
+          hours: number;
+        } => typeof item.hours === "number" && item.hours > 0,
+      );
+    if (timedBalances.length === 0) return null;
+    const totalDelta = timedBalances.reduce((sum, item) => sum + item.delta, 0);
+    const totalHours = timedBalances.reduce((sum, item) => sum + item.hours, 0);
+    if (totalHours <= 0) return null;
+    return totalDelta / totalHours;
+  }, [group, myBalances, reportUnit]);
 
   // -------------- 共通: 履歴作成 --------------
   // -------------- アクション (Hook) --------------
@@ -322,6 +343,18 @@ export default function PlayerGroupPage() {
                   return <span style={{ color }}>{text}</span>;
                 })()}
               </strong>
+              {displayedHourly != null && (
+                <>
+                  {" / "}
+                  時給:{" "}
+                  <strong>
+                    {(() => {
+                      const { text, color } = fmtDiff(displayedHourly, reportUnit);
+                      return <span style={{ color }}>{text}/h</span>;
+                    })()}
+                  </strong>
+                </>
+              )}
             </div>
           </div>
           <Link
