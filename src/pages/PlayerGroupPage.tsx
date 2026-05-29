@@ -196,7 +196,7 @@ export default function PlayerGroupPage() {
     isArchived && tab === "収支報告" ? "収支確認" : tab;
   const balanceHook = useBalanceFilter(
     myBalances as BalanceRow[],
-    "last_updated",
+    "date",
     "desc",
     reportUnit,
   );
