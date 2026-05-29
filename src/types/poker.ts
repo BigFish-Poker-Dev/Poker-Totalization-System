@@ -41,6 +41,8 @@ export type BalanceDoc = {
   ending?: number;
   buy_in_bb?: number; // Legacy field
   ending_bb?: number; // Legacy field
+  start_time?: string | null;
+  end_time?: string | null;
   memo: string;
   last_updated: any; // Timestamp
   is_deleted: boolean;
@@ -48,6 +50,17 @@ export type BalanceDoc = {
 
 // PlayerGroupPage uses this slightly extended type, but we can make it compatible
 export type BalanceRow = BalanceDoc & { __id: string };
+
+export type BalanceFormData = {
+  date: string;
+  sb: number;
+  bb: number;
+  buyIn: number;
+  ending: number;
+  startTime: string;
+  endTime: string;
+  memo: string;
+};
 
 export type HistoryDoc = {
   history_id: number;

@@ -11,6 +11,7 @@ import { db } from "../lib/firebase";
 import { deltaInUnit, getReportUnit, randDigits } from "../utils/poker";
 import type {
   BalanceDoc,
+  BalanceFormData,
   BalanceRow,
   GroupDoc,
   PlayerDoc,
@@ -62,17 +63,10 @@ export function usePlayerActions({
   }
 
   // Action: Submit Balance (Create)
-  const submitBalance = async (data: {
-    date: string;
-    sb: number;
-    bb: number;
-    buyIn: number;
-    ending: number;
-    memo: string;
-  }) => {
+  const submitBalance = async (data: BalanceFormData) => {
     if (!groupId || !user || !me || !group) return;
 
-    const { date, sb, bb, buyIn, ending, memo } = data;
+    const { date, sb, bb, buyIn, ending, startTime, endTime, memo } = data;
 
     try {
       const stakesStr = `${sb}/${bb}`;
@@ -89,6 +83,8 @@ export function usePlayerActions({
         report_unit: reportUnit,
         buy_in: buyIn,
         ending: ending,
+        start_time: startTime || null,
+        end_time: endTime || null,
         memo: memo || "",
         last_updated: serverTimestamp(),
         is_deleted: false,
@@ -136,19 +132,12 @@ export function usePlayerActions({
   // Action: Save Edit
   const saveEdit = async (
     menuTarget: BalanceRow,
-    data: {
-      date: string;
-      sb: number;
-      bb: number;
-      buyIn: number;
-      ending: number;
-      memo: string;
-    }
+    data: BalanceFormData
   ) => {
     if (!groupId || !user || !me || !menuTarget) return;
 
     try {
-      const { date, sb, bb, buyIn, ending, memo } = data;
+      const { date, sb, bb, buyIn, ending, startTime, endTime, memo } = data;
       const reportUnit = getReportUnit(group);
       const ref = doc(db, "groups", groupId, "balances", menuTarget.__id);
 
@@ -162,6 +151,8 @@ export function usePlayerActions({
         report_unit: reportUnit,
         buy_in: buyIn,
         ending: ending,
+        start_time: startTime || null,
+        end_time: endTime || null,
         memo,
         last_updated: serverTimestamp(),
       };

@@ -6,10 +6,11 @@ import {
   fmtAmount,
   getFixedStakes,
   getReportUnit,
+  parseTimeToMinutes,
   parseLegacyStakes,
   unitLabel,
 } from "../utils/poker";
-import type { BalanceDoc, GroupDoc } from "../types/poker";
+import type { BalanceDoc, BalanceFormData, GroupDoc } from "../types/poker";
 
 type Props = {
   open: boolean;
@@ -23,14 +24,7 @@ type Props = {
   // Pre-filled stakes for Create mode, optional
   defaultStakes?: { sb: string; bb: string };
   
-  onSave: (data: {
-    date: string;
-    sb: number;
-    bb: number;
-    buyIn: number;
-    ending: number;
-    memo: string;
-  }) => Promise<void>;
+  onSave: (data: BalanceFormData) => Promise<void>;
   
   // Delete action is only available in Edit mode
   onDeleteRequest?: () => void;
@@ -56,6 +50,8 @@ export default function BalanceFormModal({
   const [bb, setBb] = useState("");
   const [buyIn, setBuyIn] = useState("");
   const [ending, setEnding] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [memo, setMemo] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -80,6 +76,8 @@ export default function BalanceFormModal({
         setDate(balance.date || "");
         setBuyIn(fmtAmount(buyInInUnit(balance, reportUnit, group)));
         setEnding(fmtAmount(endingInUnit(balance, reportUnit, group)));
+        setStartTime(balance.start_time ?? "");
+        setEndTime(balance.end_time ?? "");
         setMemo(balance.memo || "");
 
         if (fixed) {
@@ -99,6 +97,8 @@ export default function BalanceFormModal({
         setDate(defaultDate || new Date().toISOString().slice(0, 10));
         setBuyIn("");
         setEnding("");
+        setStartTime("");
+        setEndTime("");
         setMemo("");
         
         if (fixed) {
@@ -137,6 +137,18 @@ export default function BalanceFormModal({
       alert("バイイン / 終了時スタック を正しく入力してください");
       return;
     }
+    if ((startTime && !endTime) || (!startTime && endTime)) {
+      alert("開始時刻と終了時刻は両方入力してください");
+      return;
+    }
+    if (startTime && endTime) {
+      const startMinutes = parseTimeToMinutes(startTime);
+      const endMinutes = parseTimeToMinutes(endTime);
+      if (startMinutes == null || endMinutes == null || startMinutes === endMinutes) {
+        alert("開始時刻と終了時刻を正しく入力してください");
+        return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -146,6 +158,8 @@ export default function BalanceFormModal({
         bb: bVal,
         buyIn: buyInVal,
         ending: endingVal,
+        startTime,
+        endTime,
         memo,
       });
       // Do NOT close automatically here; usually parent handles it or we close on success.
@@ -242,6 +256,24 @@ export default function BalanceFormModal({
             placeholder="例: 150"
             value={ending}
             onChange={(e) => setEnding(e.target.value)}
+            style={inp}
+          />
+        </div>
+        <div>
+          <label style={lbl}>開始時刻 (任意)</label>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            style={inp}
+          />
+        </div>
+        <div>
+          <label style={lbl}>終了時刻 (任意)</label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
             style={inp}
           />
         </div>

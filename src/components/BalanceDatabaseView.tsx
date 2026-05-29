@@ -282,6 +282,8 @@ export default function BalanceDatabaseView({
               {mode === "admin" && <th style={th}>プレイヤー</th>}
               <SortHeader k="date" label="日付" />
               <th style={th}>ステークス</th>
+              <th style={th}>開始時刻</th>
+              <th style={th}>終了時刻</th>
               <SortHeader k="buy_in_bb" label="BuyIn" align="right" />
               <SortHeader k="ending_bb" label="Ending" align="right" />
               <SortHeader k="delta" label="差分" align="right" />
@@ -303,6 +305,8 @@ export default function BalanceDatabaseView({
                   {mode === "admin" && <td style={td}>{name}</td>}
                   <td style={td}>{b.date || "-"}</td>
                   <td style={td}>{b.stakes || "-"}</td>
+                  <td style={td}>{b.start_time || "-"}</td>
+                  <td style={td}>{b.end_time || "-"}</td>
                   <td style={{ ...td, textAlign: "right" }}>
                     {fmtAmount(buyInInUnit(b, reportUnit))}
                   </td>
